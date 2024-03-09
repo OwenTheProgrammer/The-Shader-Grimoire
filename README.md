@@ -42,3 +42,41 @@ float2x2 inverse(float2x2 A) {
 
 </td>
 </table>
+
+## Fast Noise Algorithms
+
+Noise without hearing coil wine from your graphics card suffering trig instructions, dot products of massive numbers, and enough bit shifts to shift your mom.
+
+### QBit-Noise
+Quick-Bitwise Noise, a simple conversion of your floats memory truncated to perfection and reinterpreted as a new float $\in \left[0, 1\right]$
+
+<table>
+<tr>
+  <td> Shader Code: </td> <td> Assembly Generated: </td>
+</tr>
+
+<td>
+
+```hlsl
+float bitNoise(float uvx) {
+    static const uint2 kernel = uint2(163, 211);
+    uint2 bytes = asuint(float2(uvx, _SinTime.y));
+    uint reg = dot(kernel, bytes) & 255;
+    return float(reg) / 255.0;
+}
+```
+  
+</td>
+<td>
+
+```hlsl
+   0: imul null, r0.x, cb0[1].y, l(211)
+   1: imad r0.x, l(103), v1.x, r0.x
+   2: and r0.x, r0.x, l(255)
+   3: utof r0.x, r0.x
+   4: mul o0.xyzw, r0.xxxx, l(0.003922, 0.003922, 0.003922, 0.003922)
+```
+
+</td>
+
+</table>
