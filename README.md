@@ -33,8 +33,8 @@ float2x2 inverse(float2x2 A) {
    //A._m10_m11 -> cb0[3].xy
    0: mul r0.x, cb0[2].y, cb0[3].x
    1: mad r0.x, cb0[2].x, cb0[3].y, -r0.x
-   2: mul r1.xz, cb0[3].yyxy, l(1.000000, 0.000000, -1.000000, 0.000000)
-   3: mul r1.yw, cb0[2].yyyx, l(0.000000, -1.000000, 0.000000, 1.000000)
+   2: mul r1.xz, cb0[3].yyxy, l(1.0, 0.0, -1.0, 0.0)
+   3: mul r1.yw, cb0[2].yyyx, l(0.0, -1.0, 0.0, 1.0)
    4: div r0.xyzw, r1.xyzw, r0.xxxx
    5: dp2 o0.x, r0.xyxx, v1.xyxx
    6: dp2 o0.y, r0.zwzz, v1.xyxx
