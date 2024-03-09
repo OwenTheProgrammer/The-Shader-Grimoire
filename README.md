@@ -9,10 +9,7 @@ but often times it's simpler to realign the point back on the grid as if both we
 
 ### Full-form Inverse (float2x2):
 <table>
-<tr>
-<td> Shader Code: </td> <td> Assembly Generated: </td>
-</tr>
-
+<tr> <td> Shader Code: </td> <td> Assembly Generated: </td> </tr>
 <td>
   
 ```hlsl
@@ -29,15 +26,15 @@ float2x2 inverse(float2x2 A) {
 <td>
   
 ```hlsl
-   //A._m00_m01 -> cb0[2].xy
-   //A._m10_m11 -> cb0[3].xy
-   0: mul r0.x, cb0[2].y, cb0[3].x
-   1: mad r0.x, cb0[2].x, cb0[3].y, -r0.x
-   2: mul r1.xz, cb0[3].yyxy, l(1.0, 0.0, -1.0, 0.0)
-   3: mul r1.yw, cb0[2].yyyx, l(0.0, -1.0, 0.0, 1.0)
-   4: div r0.xyzw, r1.xyzw, r0.xxxx
-   5: dp2 o0.x, r0.xyxx, v1.xyxx
-   6: dp2 o0.y, r0.zwzz, v1.xyxx
+//A._m00_m01 -> cb0[2].xy
+//A._m10_m11 -> cb0[3].xy
+0: mul r0.x, cb0[2].y, cb0[3].x
+1: mad r0.x, cb0[2].x, cb0[3].y, -r0.x
+2: mul r1.xz, cb0[3].yyxy, l(1.0, 0.0, -1.0, 0.0)
+3: mul r1.yw, cb0[2].yyyx, l(0.0, -1.0, 0.0, 1.0)
+4: div r0.xyzw, r1.xyzw, r0.xxxx
+5: dp2 o0.x, r0.xyxx, v1.xyxx
+6: dp2 o0.y, r0.zwzz, v1.xyxx
 ```
 
 </td>
@@ -51,10 +48,7 @@ Noise without hearing coil wine from your graphics card suffering trig instructi
 Quick-Bitwise Noise, a simple conversion of your floats memory truncated to perfection and reinterpreted as a new float $\in \left[0, 1\right]$
 
 <table>
-<tr>
-  <td> Shader Code: </td> <td> Assembly Generated: </td>
-</tr>
-
+<tr> <td> Shader Code: </td> <td> Assembly Generated: </td> </tr>
 <td>
 
 ```hlsl
@@ -70,13 +64,44 @@ float bitNoise(float uvx) {
 <td>
 
 ```hlsl
-   0: imul null, r0.x, cb0[1].y, l(211)
-   1: imad r0.x, l(103), v1.x, r0.x
-   2: and r0.x, r0.x, l(255)
-   3: utof r0.x, r0.x
-   4: mul o0.xyzw, r0.xxxx, l(0.003922, ...)
+0: imul null, r0.x, cb0[1].y, l(211)
+1: imad r0.x, l(103), v1.x, r0.x
+2: and r0.x, r0.x, l(255)
+3: utof r0.x, r0.x
+4: mul o0.xyzw, r0.xxxx, l(0.003922, ...)
 ```
 
 </td>
+</table>
 
+### QBit-Sparkles
+A simple modification that only keeps the most activated pixel values, making it look like sparkle noise.
+
+<table>
+<tr>
+  <td> Shader Code: </td> <td> Assembly Generated: </td>
+</tr>
+<td>
+  
+```hlsl
+float bitSparkles(float uvx) {
+    static const uint2 kernel = uint2(163, 211);
+    uint2 bytes = asuint(float2(uvx, _SinTime.y));
+    uint reg = dot(kernel, bytes) & 255;
+    return float(reg / 255);
+}
+```
+
+</td>
+<td>
+
+```hlsl
+0: imul null, r0.x, cb0[1].y, l(211)
+1: imad r0.x, l(163), v1.x, r0.x
+2: and r0.x, r0.x, l(255)
+3: udiv r0.x, null, r0.x, l(255)
+4: utof o0.xyzw, r0.xxxx
+```
+
+</td>
 </table>
