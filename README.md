@@ -29,6 +29,8 @@ float2x2 inverse(float2x2 A) {
 <td>
   
 ```hlsl
+   //A._m00_m01 -> cb0[2].xy
+   //A._m10_m11 -> cb0[3].xy
    0: mul r0.x, cb0[2].y, cb0[3].x
    1: mad r0.x, cb0[2].x, cb0[3].y, -r0.x
    2: mul r1.xz, cb0[3].yyxy, l(1.000000, 0.000000, -1.000000, 0.000000)
