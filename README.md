@@ -74,7 +74,7 @@ float bitNoise(float uvx) {
    1: imad r0.x, l(103), v1.x, r0.x
    2: and r0.x, r0.x, l(255)
    3: utof r0.x, r0.x
-   4: mul o0.xyzw, r0.xxxx, l(0.003922, 0.003922, 0.003922, 0.003922)
+   4: mul o0.xyzw, r0.xxxx, l(0.003922, ...)
 ```
 
 </td>
