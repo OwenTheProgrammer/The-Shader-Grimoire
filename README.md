@@ -1,6 +1,13 @@
 # The-Shader-Grimoire
 A couple cursed, hyper-optimized or demonstrative shader things that will add me to your personal hit-list
 
+# Table of Contents
+* [Inverse Functions](https://github.com/OwenTheProgrammer/The-Shader-Grimoire#inverse-functions)
+  * [Full-Form Inverse (float2x2)](https://github.com/OwenTheProgrammer/The-Shader-Grimoire#full-form-inverse-float2x2)
+* [Fast Noise Algorithms](https://github.com/OwenTheProgrammer/The-Shader-Grimoire#fast-noise-algorithms)
+  * [QBit Noise](https://github.com/OwenTheProgrammer/The-Shader-Grimoire#qbit-noise)
+  * [QBit Sparkles](https://github.com/OwenTheProgrammer/The-Shader-Grimoire#qbit-sparkles)
+
 ## Inverse Functions
 You need to undo the actions of a matrix? You're most likely after its inverse.
 
