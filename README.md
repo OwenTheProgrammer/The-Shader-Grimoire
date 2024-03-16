@@ -2,11 +2,56 @@
 A couple cursed, hyper-optimized or demonstrative shader things that will add me to your personal hit-list
 
 # Table of Contents
+* [Gaussian Blur Approximation](https://github.com/OwenTheProgrammer/The-Shader-Grimoire#gaussian-blur-approximation)
 * [Inverse Functions](https://github.com/OwenTheProgrammer/The-Shader-Grimoire#inverse-functions)
   * [Full-Form Inverse (float2x2)](https://github.com/OwenTheProgrammer/The-Shader-Grimoire#full-form-inverse-float2x2)
 * [Fast Noise Algorithms](https://github.com/OwenTheProgrammer/The-Shader-Grimoire#fast-noise-algorithms)
   * [QBit Noise](https://github.com/OwenTheProgrammer/The-Shader-Grimoire#qbit-noise)
   * [QBit Sparkles](https://github.com/OwenTheProgrammer/The-Shader-Grimoire#qbit-sparkles)
+
+# Gaussian Blur Approximation
+While working on my real time lighting system (Object GI), I was trying to approximate the gaussian equation for blur. This is that approximation and its surprisingly good.
+<table>
+ <tr> <td> Shader Code: </td> <td> Assembly Generated: </td> </tr>
+<td>
+ 
+```hlsl
+float gaussianSample(float x, float k) {
+    static const float sWeights = UNITY_PI * float2(2.0, sqrt(2.0)/2.0);
+    float2 kT = (1.0/sqrt(sWeights)) / k;
+    x = saturate(kT.y * abs(x));
+    return abs(kT.x) * ((x*x-1)*(x*x-1));
+}
+```
+ 
+</td>
+<td>
+
+```hlsl
+   0: div r0.x, l(0.398942), v1.y
+   1: mul_sat r0.y, r0.x, |v1.x|
+   2: mad r0.y, r0.y, r0.y, l(-1.000000)
+   3: mul r0.y, r0.y, r0.y
+   4: mul o0.xyzw, r0.yyyy, |r0.xxxx|
+   5: ret 
+```
+ 
+</td>
+
+<tr> <td> Original Gaussian: </td> <td> Approximation: </td> </tr>
+<td>
+ 
+![image](https://github.com/OwenTheProgrammer/The-Shader-Grimoire/assets/66239220/d9467017-93f2-444a-9116-6a8f90ea197a)
+
+</td>
+<td>
+
+![image](https://github.com/OwenTheProgrammer/The-Shader-Grimoire/assets/66239220/02bcae44-f1c9-4961-b633-7c6c1db2a054)
+
+ 
+</td>
+
+</table>
 
 ## Inverse Functions
 You need to undo the actions of a matrix? You're most likely after its inverse.
