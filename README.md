@@ -156,3 +156,29 @@ float bitSparkles(float uvx) {
 
 </td>
 </table>
+
+I dont have the time to make this pretty today, but heres some triangle functions (I will come back and make this presentable)
+
+T(0) = 0, T(1) = 1
+```math
+T_{0 \rightarrow 1}(x) = | 1 - 2\cdot \text{frac}( 0.5 x - 0.5) |
+```
+T(0) = 1, T(1) = 0
+```math
+T_{1 \rightarrow 0}(x) = | 1 - 2\cdot \text{frac}( 0.5 x ) |
+```
+T(0) = 0, T(1) = E(x, y)
+```math
+\begin{split}
+T(x, P_{x,y}) &= P_y \biggl| 1 - 2\cdot \text{frac}\left( \frac{1}{2 P_x} \cdot x - 0.5 \right) \biggr| \\
+&= P_y \biggl| 1 - 2\cdot \text{frac}\left( \frac{x - P_x}{2 P_x} \right) \biggr|
+\end{split}
+```
+T(0)=A(x, y), T(1) = B(x, y)
+```math
+\begin{split}
+T(x, A_{x,y}, B_{x,y}) &= (B_y - A_y) \biggl| 1 - 2 \cdot \text{frac} \left( 0.5 \left[ \frac{x - A_x}{B_x - A_x} \right] - 0.5 \right) \biggr| + A_y \\
+&= (B_y - A_y) \biggl| 1 - 2 \cdot \text{frac} \left( \frac{x - B_x}{2\left( B_x - A_x\right)} \right) \biggr| + A_y
+\end{split}
+```
+
