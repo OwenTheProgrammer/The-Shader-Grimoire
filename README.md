@@ -17,10 +17,9 @@ While working on my real time lighting system (Object GI), I was trying to appro
  
 ```hlsl
 float gaussianSample(float x, float k) {
-    static const float sWeights = UNITY_PI * float2(2.0, sqrt(2.0)/2.0);
-    float2 kT = (1.0/sqrt(sWeights)) / k;
-    x = saturate(kT.y * abs(x));
-    return abs(kT.x) * ((x*x-1)*(x*x-1));
+    k = rcp(sqrt(UNITY_TWO_PI)) / k;
+    x = saturate(k * abs(x));
+    return abs(k) * pow(x*x-1, 2);
 }
 ```
  
