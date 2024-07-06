@@ -6,10 +6,11 @@ to optimize it!
 
 Looking at the [Gaussian blur equation](https://en.wikipedia.org/wiki/Gaussian_blur#Mathematics)
 
-$$
+```math
 \large
     G(x) = \frac{1}{\sqrt{2\pi \sigma^2}} e^{-\frac{x^2}{2\sigma^2}}
-$$
+```
+
 We can see there are two main terms here. The first term is the inverse root and the second being the 
 exponential part.
 
@@ -62,11 +63,12 @@ k = \frac{1}{\sqrt{2\pi}} \approx 0.39894...
 $$
 
 
-<h3> The Exponential <strike>pain</strike> </h3>
+## The Exponential <strike>pain</strike>
 
 Id like to preface this part with the fact that *I got lucky figuring this part out. Only now do I actually know why this works the way it does.*
 
 With that out of the way, math!
+
 $$
 \LARGE
 e^{-\frac{x^2}{2\textcolor{orange}{\sigma}^2}}
@@ -108,7 +110,10 @@ $$
 The only problem with this is the fact that the turning points are at -1 and +1, while the exponential is 
 not. Luckily, we can multiply $x$ by some constant $w$ to shift the turning points to best fit the function.
 
-<center><i>Now all we have to do is figure out what that constant term is.</i></center><br>
+<p align="center" width="100%">
+    <i>Now all we have to do is figure out what that constant term is.</i>
+</p>
+    <br>
 
 Because the application of this function is the sum of a distribution, we care more about the function areas matching 
 rather than the functions lining up with each other when graphed (although those are typically bijective.) 
@@ -119,44 +124,46 @@ First of all, we have to get the integral of both functions. Lets start with the
 
 $$
 \begin{split}
-    F(x, w) &= \int{\left(\left(wx\right)^2-1\right)^2} \;\;dx \\
-    &= \int{w^4x^4-2w^2x^2+1} \;\;dx \\
-    &= \int{w^4x^4}\;\;dx - \int{2w^2x^2}\;\;dx + \int{1}\;\;dx \\
-    &= w^4\int{x^4}\;\;dx -2w^2\int{x^2}\;\;dx + 1\int{}dx \\
+    F(x, w) &= \int{\left(\left(wx\right)^2-1\right)^2}dx \\
+    &= \int{w^4x^4-2w^2x^2+1} dx \\
+    &= \int{w^4x^4}dx - \int{2w^2x^2}dx + \int{1}dx \\
+    &= w^4\int{x^4}dx -2w^2\int{x^2}dx + 1\int{}dx \\
 \end{split}
 $$
 
-<center><table><tr><td>
+<p align="center" width="100%">
+<table><tr><td>
 
-$$
+```math
 \begin{split}
     1\int{dx} &= 1\int{x^0}\;dx \\
     1\left[ \frac{x^{0+1}}{0+1} \right] &= 1\left[ \frac{x^1}{1}\right] \\
     &= x
 \end{split}
-$$
+```
 
 </td><td>
 
-$$
+```math
 \begin{split}
-    &= -2w^2\int{x^2}\;dx \\
+    &= -2w^2\int{x^2}dx \\
     &= -2w^2 \left[\frac{x^{2+1}}{2+1}\right] \\
     &= \frac{-2w^2x^3}{3} \\
 \end{split}
-$$
+```
 
 </td><td>
 
-$$
+```math
 \begin{split}
-    &= w^4\int{x^4}\;dx \\
+    &= w^4\int{x^4}dx \\
     &= w^4 \left[\frac{x^{4+1}}{4+1}\right] \\
     &= \frac{w^4x^5}{5} \\
 \end{split}
-$$
+```
 
-</td></tr></table></center>
+</td></tr></table>
+</p>
 
 $$
 \begin{split}
@@ -180,19 +187,24 @@ Alright! we know the area of a given range over our polynomial domain. Now all w
 
 $$
 \LARGE
-    \int{e^{-\frac{x^2}{2}}}\;dx
+    \int{e^{-\frac{x^2}{2}}}dx
 $$
 
 And we can simply evaluate this with the [Gaussian integral](https://en.wikipedia.org/wiki/Gaussian_integral) with some wo-...
 
-<center><img src="./GaussApproximation/me_rn.gif" width="256"/></center>
+<p align="center" width="100%">
+<img src="./GaussApproximation/me_rn.gif" width="256"/>
+</p>
 
-<center> Oh no... oh god no... I need the definite integral...</center>
-<center><h3>...</h3></center>
+<p align="center" width="100%">
+    Oh no... oh god no... I need the definite integral... <br>
+    ...
+</p>
 
 OKAY so fun fact about Owen, he didnt go to school for this shit and he *definitely* doesnt know how to do THIS shit. Time to call up my side-chick Wolfram-alpha.
 
 Here is the equation
+
 $$
 \large
     E(w) = \frac{\sqrt{\pi}\text{ erf}\left(\frac{1}{\sqrt{2}w}\right)}{\sqrt{2}}
@@ -203,7 +215,7 @@ find when $w$ approaches 0
 
 $$
 \large
-    k = \underset{w \rightarrow 0^+}{\min} \; \bigl| E(w) - F(w) \bigr| = \underset{w \rightarrow 0^+}{\min} \; \biggl|
+    k = \underset{w \rightarrow 0^+}{\min} \bigl| E(w) - F(w) \bigr| = \underset{w \rightarrow 0^+}{\min} \biggl|
         \frac{\sqrt{\pi}\text{ erf}\left(\frac{1}{\sqrt{2}w}\right)}{\sqrt{2}} - \frac{8}{15w} \biggr|
 $$
 
@@ -244,39 +256,44 @@ $$
 \large
 \begin{split}
     g(x) &= \left(x^2-1\right)^2 \\
-    f(x) &= g\left( \min\left( \frac{0.43488}{\sigma} \; |x|,\; 1 \right)\right) \\
+    f(x) &= g\left( \min\left( \frac{0.43488}{\sigma} |x|, 1 \right)\right) \\
 \end{split}
 $$
 
 Finally, combining it all together, we get a fairly efficient-to-compute gaussian approximation with zero runtime square roots, average 2-4% error over the entire curve, and of course, faster kernel blurs.
 
-<center><table><tr><td>
+<p align="center" width="100%">
+<table>
+    <tr><td>
 
-$$
+```math
 \LARGE
     \frac{1}{\sqrt{2\pi\sigma^2}} = \frac{\left(\frac{1}{\sqrt{2\pi}}\right)}{|\sigma|}
-$$
+```
 
 </td><td></td><td>
 
-$$
+```math
 \LARGE
     e^{-\frac{x^2}{2\sigma^2}} \;\approx\; 
 \large
     \left(\min\left( \frac{0.43488 |x|}{\sigma}, 1\right)^2-1\right)^2
-$$
+```
 
 </td>
-</tr></table>
+</tr>
 
-$$
+</table>
+</p>
+
+```math
 \LARGE
     \frac{1}{\sqrt{2\pi\sigma^2}}e^{-\frac{x^2}{2\sigma^2}} \quad\approx\quad 
     \Biggl|
     \large\frac{\left(\frac{1}{\sqrt{2\pi}}\right)}{\sigma}
     \Biggr|
     \cdot g\left(\min \left(\Biggl| \frac{0.43488x}{\sigma} \Biggr|, 1\right)\right)
-$$
+```
 
 <table><tr> <td>HLSL code:</td> <td>GLSL code:</td>
 </tr>
@@ -338,7 +355,7 @@ float gauss_approx(float x, float k) {
 </td>
 </tr>
 </table>
-</center>
+</p>
 
 And after all are hard work its-.. SLOWER?? WTF? welp. This comes as a massive plot point to the effort/outcome curve; I may have wasted my time this time in terms of what I was trying to accomplish, but I went down avenues I just wouldnt find myself in if I didnt *try* to do this. At the same time, theres a chance the code would have been better! If that was the case I dont think anyone would be complaining much.
 
