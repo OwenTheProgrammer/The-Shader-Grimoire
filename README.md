@@ -2,12 +2,110 @@
 A couple cursed, hyper-optimized or demonstrative shader things that will add me to your personal hit-list
 
 # Table of Contents
+* [Weird Shader Stuff](https://github.com/OwenTheProgrammer/The-Shader-Grimoire#weird-shader-stuff)
+  * [Cotangent](https://github.com/OwenTheProgrammer/The-Shader-Grimoire#cotangent)
 * [Gaussian Blur Approximation](https://github.com/OwenTheProgrammer/The-Shader-Grimoire#gaussian-blur-approximation)
 * [Inverse Functions](https://github.com/OwenTheProgrammer/The-Shader-Grimoire#inverse-functions)
   * [Full-Form Inverse (float2x2)](https://github.com/OwenTheProgrammer/The-Shader-Grimoire#full-form-inverse-float2x2)
 * [Fast Noise Algorithms](https://github.com/OwenTheProgrammer/The-Shader-Grimoire#fast-noise-algorithms)
   * [QBit Noise](https://github.com/OwenTheProgrammer/The-Shader-Grimoire#qbit-noise)
   * [QBit Sparkles](https://github.com/OwenTheProgrammer/The-Shader-Grimoire#qbit-sparkles)
+
+# Weird Shader Stuff
+A compilation of all the random quirks about the HLSL compiler or compilation processed asm.
+
+## Cotangent
+So fun fact about tangent and the lesser known cotangent.
+
+```math
+\Large
+ \tan \theta = \frac{\sin \theta}{\cos \theta}, \quad
+ \cot \theta = \frac{\cos \theta}{\sin \theta}
+```
+
+We can make $\frac{1}{\tan \theta}$, "cot" or "cotangent" by switching the numerator and denominator.
+
+```math
+\Large
+ \frac{1}{\tan \theta} = \frac{1}{\frac{\sin \theta}{\cos \theta}}, \quad
+ \frac{A}{\left(\frac{B}{C}\right)} = \frac{AC}{B}, \quad
+ \frac{1}{\frac{\sin \theta}{\cos \theta}} = \frac{\cos \theta}{\sin \theta} = \cot \theta
+```
+
+With this in mind, let's look at the shader assembly of the `tan` intrinsic, and the cotangent form $\frac{1}{\tan \theta}$
+
+<table>
+ <tr> <td> Shader Code: </td> <td> Assembly Generated: </td> </tr>
+<tr>
+ <td>
+  
+ ```hlsl
+  return tan(i.uv.x);    
+ ```
+  
+ </td>
+ <td>
+ 
+ ```hlsl
+    0: sincos r0.x, r1.x, v1.x
+    1: div o0.xyzw, r0.xxxx, r1.xxxx
+    2: ret 
+ ```
+ 
+ </td>
+</tr>
+<tr>
+ <td>
+  
+ ```hlsl
+  return 1.0 / tan(i.uv.x);    
+ ```
+  
+ </td>
+ <td>
+ 
+ ```hlsl
+   0: sincos r0.x, r1.x, v1.x
+   1: div r0.x, r0.x, r1.x
+   2: div o0.xyzw, l(1.000000, 1.000000, 1.000000, 1.000000), r0.xxxx
+   3: ret 
+ ```
+ 
+ </td>
+</tr>
+</table>
+
+You may notice the fact that the compiler didn't pick up the simplification here. Interestingly, hard-coding the definition of the cotangent or "one over tan" here nets better results.
+
+<table>
+ <tr> <td> Shader Code: </td> <td> Assembly Generated: </td> </tr>
+<tr>
+ <td>
+  
+ ```hlsl
+  return cos(i.uv.x) / sin(i.uv.x);     
+ ```
+  
+ </td>
+ <td>
+ 
+ ```hlsl
+   0: sincos r0.x, r1.x, v1.x
+   1: div o0.xyzw, r1.xxxx, r0.xxxx
+   2: ret 
+ ```
+ 
+ </td>
+</tr>
+</table>
+
+Adding this define to your shader will allow you to use $\frac{1}{\tan}$ as `cot`
+
+```hlsl
+ #define cot(x) ( cos( (x) ) / sin( (x) ) )
+ ...
+ return cot(i.uv.x);
+```
 
 # Gaussian Blur Approximation
 While working on my real time lighting system (Object GI), I was trying to approximate the gaussian equation for blur. This is that approximation and its surprisingly good.
