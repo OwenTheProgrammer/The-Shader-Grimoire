@@ -37,7 +37,7 @@ This function looks like it could match the error function with a bit of tuning!
 I added a term $w$ as a scalar to $x$, which we can find a good $w$ term to approximate the error function.
 
 ```math
-	\frac{e^{\bm{w}x} - 1}{e^{\bm{w}x} + 1}
+	\frac{e^{\textcolor{blue}{w}x} - 1}{e^{\textcolor{blue}{w}x} + 1}
 ```
 
 To figure out the best fitting $w$ term, I defined $w$ as a third degree polynomial, and used Mathematica to numerically optimize the coefficients through *difference of squares*.
