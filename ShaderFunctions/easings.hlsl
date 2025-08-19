@@ -159,9 +159,7 @@ float easeInOutCirc(float x)
 // MAD + 2 MUL, r0.xy
 float easeInBack(float x)
 {
-	x = 1 - x;
-	return 1 - x * ((2.70158 * x - 6.40316) * x + 4.70158);
-    //return x*x * (2.70158 * x - 1.70158);
+    return x*x * (2.70158 * x - 1.70158);
 }
 
 // MUL + 2 MAD, r0.x
