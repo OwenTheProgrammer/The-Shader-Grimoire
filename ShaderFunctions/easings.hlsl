@@ -1,7 +1,9 @@
-#pragma once
+#ifndef _EASING_FUNCTIONS_INCLUDED_
+#define _EASING_FUNCTIONS_INCLUDED_
 // Easing functions from https://easings.net/ optimized for graphics hardware by OwenTheProgrammer.
 // Use this code as you wish, view https://github.com/OwenTheProgrammer/The-Shader-Grimoire license for legal
 // All functions are assumed to have a working domain and range of 0 to 1 unless specified.
+// https://www.desmos.com/calculator/ywcku5k4mp
 
 // MUL + SINCOS + ADD, r0.x
 float easeInSine(float x)
@@ -157,82 +159,95 @@ float easeInOutCirc(float x)
 }
 
 // MAD + 2 MUL, r0.xy
+// RANGE: -0.100004 <= y <= 1
 float easeInBack(float x)
 {
     return x*x * (2.70158 * x - 1.70158);
 }
 
 // MUL + 2 MAD, r0.x
+// RANGE: 0 <= y <= 1.100004
 float easeOutBack(float x)
 {
     return x * ((2.70158 * x - 6.40316) * x + 4.70158);
 }
 
-// Could probably do a little better
-// MUL + 5 MAD, r0.xy
+// ADD + 3 MAD, r0.xy
+// RANGE: -0.100151 <= y <= 1.100151
 float easeInOutBack(float x)
 {
-    float v = 1 - 2 * x;
-    const float4 K = float4(4.0949095, 16.379638, 14.379638, 21.569457);
-    return K.x * (v * abs(v) - 1) + x * (K.y + x * (K.z * x - K.w));
+	float f;
+	x -= 0.5;
+	f = 14.379638 * abs(x) - 16.379638;
+	f = f * abs(x) + 5.5949095;
+	return f * x + 0.5;
 }
 
 // EXP + SINCOS + MUL + 2 MAD, r0.xy
+// RANGE: -0.372428 <= y <= 1
 float easeInElastic(float x)
 {
     const float pi = 3.14159265359;
-    const float hpi = pi * 0.5;
-    const float S = (20.0 * pi)/3.0;
-    const float M = 1024.0 / 513.0;
-    const float B = 1.0 / 513.0;
-    float f = exp2(10 * x - 10) * sin(S * x - hpi);
-    return f * M - B;
+    const float sin_m = 20.0 * pi / 3.0;
+    const float sin_b = -43.0 * pi / 6.0;
+    const float m = -2048.0 / 2049.0;
+    const float b = 1.0 / 2049.0;
+
+    float f = exp2(10 * x - 10) * sin(sin_m * x + sin_b);
+    return f * m + b; 
 }
 
-// SINCOS + EXP + 2 MUL + 2 MAD, r0.xy
+// SINCOS + EXP + MUL + 2 MAD, r0.xy
+// RANGE: 0 <= y <= 1.372428
 float easeOutElastic(float x)
 {
     const float pi = 3.14159265359;
-    const float hpi = pi * 0.5;
-    const float S = (20.0 * pi)/3.0;
-    const float B = 2048.0 / 2049.0;
-    float f = exp2(-10 * x) * sin(S * x - hpi);
-    return f * B + B;
+    const float sin_m = 20.0 * pi / 3.0;
+    const float sin_b = -pi * 0.5;
+    const float m = 2.0 / 2049.0;
+    const float b = 2048.0 / 2049.0;
+
+    float f = exp2(-10 * x + 10) * sin(sin_m * x + sin_b);
+    return f * m + b;
 }
 
-// Hate this one. May revisit.
-// SINCOS + EXP + LT + AND + 2 MUL + 4 MAD, r0.xyz
+// SINCOS + EXP + LT + AND + MUL + 4 MAD, r0.xyz
+// RANGE: -0.118453 <= y <= 1.118453
 float easeInOutElastic(float x)
 {
     const float pi = 3.14159265359;
-    const float cosw = (4.0 * pi) / 9.0;
-    const float M = -512.0/(sin(pi/18.0)-1024.0);
-    const float B = 0.5;
+    const float sin_m = 80.0 * pi / 9.0;
+    const float sin_b = -89.0 * pi / 18.0;
+    const float m = 512.0 / (1024.0 - sin(pi/18.0));
+    const float b = 0.5;
 
     float v = 20 * x - 10;
-    float m = 1 - 2 * float(v < abs(v)); //sign(v)
-    float f = m * (1 - exp2(-abs(v)) * cos(cosw * v));
-    return f * M + B;
+    float s = 1 - 2 * float(v < abs(v)); //sign(v)
+    float f = exp2(-abs(v)) * sin(sin_m * x + sin_b);
+    return (f * s + s) * m + b;
 }
 
-// Because of the full 4 component count, I may revisit
-// ADD + MAD + MUL + 2 MIN, r0.xyzw
-float easeOutBounce(float x)
-{
-    const float4 BIAS = float4(0,6,9,10.5)/11.0;
-    const float4 OFFSET = float4(0,12,15,15.75)/121.0;
-    float4 p = (x - BIAS) * (x - BIAS) + OFFSET;
-    return 7.5625 * min(min(p.x, p.y), min(p.z, p.w));
-}
-
-// Because of the full 4 component count, I may revisit
-// ADD + 2 MAD + 2 MIN, r0.xyzw
+// 2 MAD + 2 MAX, r0.xyzw
 float easeInBounce(float x)
 {
-    return 1 - easeOutBounce(1 - x);
+	const float M = -121.0 / 16.0;
+	const float4 OFFSET = float4(11,44,110,242) / 16.0;
+	const float4 BIAS = float4(0,3,21,105) / 16.0;
+	float4 p = (M * x + OFFSET) * x - BIAS;
+	return max(max(p.x, p.y), max(p.z, p.w));
 }
 
-// IADD + ITOF + MUL + 2 LT + 2 MIN + 3 MAD, r0.xyzw
+// 2 MAD + 2 MIN, r0.xyzw
+float easeOutBounce(float x)
+{
+    const float M = 121.0 / 16.0;
+    const float4 OFFSET = float4(0,132,198,231) / 16.0;
+    const float4 BIAS = float4(0,3,6,63.0/8.0);
+    float4 p = (M * x - OFFSET) * x + BIAS;
+    return min(min(p.x, p.y), min(p.z, p.w));
+}
+
+// Revisiting soon
 float easeInOutBounce(float x)
 {
     float v = 2 * x - 1;
@@ -240,11 +255,12 @@ float easeInOutBounce(float x)
     return f * 0.5 + 0.5;
 }
 
-// MIN + MAX + 2 ADD + 2 LOG + 2 EXP + 2 MAD + 2 MUL, r0.xy
+// MIN + LOG + MUL + EXP + ADD + 2 MAD, r0.xy
 float easeInOutNth(float x, float n)
 {
-    //x = saturate(x);
-    float b = 2 * min(x, 0.5);
-    float a = 2 - 2 * max(x, 0.5);
-    return (pow(b, n) - pow(a, n)) * 0.5 + 0.5;
+	//x = saturate(x);
+	float2 v = min(float2(2 - 2 * x, 2 * x), 1);
+	return (pow(v.y, n) - pow(v.x, n)) * 0.5 + 0.5;
 }
+
+#endif //_EASING_FUNCTIONS_INCLUDED_
