@@ -15,7 +15,7 @@ If you understand integration as a tool for reverse engineering function definit
 There's one small problem with that. The anti-derivative contains the error function itself.
 
 ```math
-\int{\textcolor{red}{\mathrm{erf}(z)}\:dz} = z\textcolor{red}{\mathrm{erf}(z)} + \frac{e^{-z^2}}{\sqrt{pi}} + C
+\int{\textcolor{red}{\mathrm{erf}(z)}\:dz} = z\textcolor{red}{\mathrm{erf}(z)} + \frac{e^{-z^2}}{\sqrt{\pi}} + C
 ```
 
 Because of this, an approximate form is typically substituted when you actually have to evaluate the integral with precision. Approximating the error function accurately usually requires methods like infinite sequences, such as a [Taylor series](https://en.wikipedia.org/wiki/Taylor_series), which is perfectly fine for most real world services like Desmos. I sadly, however, don't have seconds of computation time, I have *milliseconds.* We simply don't have the compute power in graphics to be doing expensive things like this every frame, so I set out to create a good middle ground. **Also yes, I am entirely against throwing bigger graphics cards at problems, that's not a solution.**

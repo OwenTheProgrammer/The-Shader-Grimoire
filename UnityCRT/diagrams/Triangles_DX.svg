@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" version="1.1" width="80.336" height="83.765" viewBox="0 0 80.336 83.765">
+<rect width="100%" height="100%" fill="white" rx="2" />
 <path transform="matrix(1,0,0,-1,40.168,42.158)" stroke-width=".3985" stroke-linecap="butt" stroke-miterlimit="10" stroke-linejoin="miter" fill="none" stroke="#000000" d="M0 35.43349"/>
 <text xml:space="preserve" transform="matrix(1 0 -0 1 0 83.765)" font-size="9.9626" font-family="CMR10"><tspan y="-73.636" x="22.927 30.538428 33.30803 37.213369 41.63676 46.060155 49.935606">DirectX</tspan></text>
 <g>
