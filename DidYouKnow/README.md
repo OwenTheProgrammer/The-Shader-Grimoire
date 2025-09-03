@@ -553,22 +553,6 @@ float function(float arg1);
 float function(float arg2);
 ```
 
-### Function Overloading
-
-Just learned today you can completely overload the definition of a built-in function like `sin` for instance, and the HLSL compiler won't complain about it lmao
-
-```hlsl
-float sin(float x)
-{
-	return 0;
-}
-
-sin(x); // this will now always return 0
-```
-
-> [!NOTE]
-> The code above will now only work correctly for `sin(float)`. If you want it to work for float2, float3, and float4, you'll have to define those prototypes as well.
-
 ## Parameter Modifiers / Keywords
 
 ### void keyword
@@ -1014,3 +998,21 @@ outputData frag(v2f i)
 which actually might be helpful if you're outputing things like `SV_DEPTH`
 
 Even though its valid. Please don't over use it.
+
+### Intrinsic Overloading
+
+Just learned today you can completely overload the definition of a built-in function like `sin` for instance, and the HLSL compiler won't complain about it lmao
+
+```hlsl
+float sin(float x)
+{
+	return 0;
+}
+
+sin(x); // this will now always return 0
+```
+
+> [!NOTE]
+> The code above will now only work correctly for `sin(float)`. If you want it to work for float2, float3, and float4, you'll have to define those prototypes as well.
+
+I don't think I need to stress why this is cursed as hell to you.
