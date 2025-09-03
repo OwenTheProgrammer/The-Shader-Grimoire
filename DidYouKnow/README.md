@@ -566,6 +566,9 @@ float sin(float x)
 sin(x); // this will now always return 0
 ```
 
+> [!NOTE]
+> The code above will now only work correctly for `sin(float)`. If you want it to work for float2, float3, and float4, you'll have to define those prototypes as well.
+
 ## Parameter Modifiers / Keywords
 
 ### void keyword
