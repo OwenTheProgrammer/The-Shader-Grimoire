@@ -553,6 +553,19 @@ float function(float arg1);
 float function(float arg2);
 ```
 
+### Function Overloading
+
+Just learned today you can completely overload the definition of a built-in function like `sin` for instance, and the HLSL compiler won't complain about it lmao
+
+```hlsl
+float sin(float x)
+{
+	return 0;
+}
+
+sin(x); // this will now always return 0
+```
+
 ## Parameter Modifiers / Keywords
 
 ### void keyword
