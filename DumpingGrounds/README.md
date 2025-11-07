@@ -1,6 +1,6 @@
 # The Dumping Grounds
 
-It may seem like I've got all my quads in one basket, but truth be told, I'm as lazy as I am productive, $\sqrt{2}\:\%$ of the time.
+It may seem like I've got all my quads in one basket, but truth be told, I'm as lazy as I am productive, $\sqrt{2}$% of the time.
 
 When I come up with either a shader function, or a wacky way to do things, I ~~document them correctly and store them in a good place~~ DM the people I think will look at it, post it into servers I think will actually open discord for it, and move on with my day. If may have a horrible memory for the rest of my daily tasks, but when it comes to *that one time I made that one function, I know the exact time period and person to search through DMs for.*
 
@@ -99,6 +99,28 @@ Then you can sample the texture colour channels as a 3D texture, like this
 ```hlsl
 float3 samplePacked3D(sampler2D tex, float3 uvw) {
     return dot(tex2D(tex, uvw.xy), getChannelWeightsRGBA(frac(uvw.z)));
+}
+```
+
+### Inverse RGBA Channel Interpolation
+
+If you want to determine the t value for the [RGBA Channel Interpolation](#rgba-channel-interpolation) you can do so with any of these functions.
+
+> [!NOTE]
+> There is a singularity at t=0 and t=1
+
+```hlsl
+float inverseRGBAChannelWeights(float4 weights)
+{
+    return sqrt(weights.a) / (sqrt(weights.a) + sqrt(weights.g));
+}
+float inverseRGBAChannelWeights(float4 weights)
+{
+    return (2 * weights.b) / (2 * weights.b + 3 * weights.g);
+}
+float inverseRGBAChannelWeights(float4 weights)
+{
+    return (3 * weights.a) / (3 * weights.a + 2 * weights.b);
 }
 ```
 
