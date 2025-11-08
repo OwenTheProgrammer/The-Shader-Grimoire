@@ -45,7 +45,7 @@ I then did some work to convert the range from $[0, 1]$ to $[-1, 1]$
 ```
 
 <p align="center">
-	<img alt="Error function difference" src="./diagrams/erf_diff.svg" width="50%"/>
+	<img alt="Error function difference" src="../_InternalAssets/shader_functions/details/diagrams/erf_diff.svg" width="50%"/>
 </p>
 
 This function looks like it could match the error function with a bit of tuning!
@@ -132,7 +132,7 @@ Results from above but readable:
 - Because the error is mirrored along the y axis, the median error is exactly $0$.
 
 <p align="center">
-	<img alt="Error term of the approximation" src="./diagrams/erf_error.svg" width="50%"/>
+	<img alt="Error term of the approximation" src="../_InternalAssets/shader_functions/details/diagrams/erf_error.svg" width="50%"/>
 </p>
 
 ```hlsl

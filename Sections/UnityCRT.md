@@ -197,7 +197,7 @@ Don't get me wrong here, custom render textures are *extremely useful* for solvi
 
 After admittedly two days worth of work and project structure, I finally got around to making a CRT include that does 2D CRTs, and does it well.
 
-Let's write the same shader as before but using my [CRTStandard2D.cginc](./shaders/CRTStandard2D.cginc) file.
+Let's write the same shader as before but using my [CRTStandard2D.cginc](../_InternalAssets/unity_crt/shaders/CRTStandard2D.cginc) file.
 
 ```hlsl
 Shader "CustomRenderTexture"
@@ -307,7 +307,7 @@ Shader Disassembly:
 ## The Raw CGINC
 
 If this is the end of the road for your stay, I wish you the best of luck on your shader endeavours.
-I have some [examples in the same directory you'll find the cginc file itself](./shaders).
+I have some [examples in the same directory you'll find the cginc file itself](../_InternalAssets/unity_crt/shaders).
 
 ```hlsl
 // A heavily stripped down version of the UnityCustomRenderTexture.cginc by OwenTheProgrammer
@@ -438,9 +438,9 @@ Why didn't I include `& 1` at the end of `is_negative` here? When `asfloat` goes
 Now that we have a way to store an array of $\pm1$ float values in a single integer, we need to start thinking about the triangles we want to store. For DirectX style graphics APIs, the frontface winding order works when it's *clockwise*, where OpenGL style APIs seem to work when it's *counterclockwise*. This would have been a Unity decision, and probably setup this way to match OpenGLs (Z-) eye forward. TL;DR the triangles that showed up correctly were CW on DirectX and CCW on OpenGL. Below is a diagram for the triangle layouts I choose to encode.
 
 <p align="center">
-    <img alt="DirectX triangle configuration" src="./diagrams/Triangles_DX.svg" width="45%"/>
+    <img alt="DirectX triangle configuration" src="../_InternalAssets/unity_crt/diagrams/Triangles_DX.svg" width="45%"/>
     &nbsp;&nbsp;&nbsp;&nbsp;
-    <img alt="OpenGL triangle configuration" src="./diagrams/Triangles_GL.svg" width="45%"/>
+    <img alt="OpenGL triangle configuration" src="../_InternalAssets/unity_crt/diagrams/Triangles_GL.svg" width="45%"/>
 </p>
 
 If we were to encode the vertex positions in an array like a normal person, we would end up with the array below.
@@ -587,8 +587,8 @@ Putting all of this together, we:
 - Scale the `zw` components of the UV to include normalized and pixel scaled UVs
 - Get a much better CRT shader base that's optimized and updated for our cases.
 
-You can find the files for this project [in the shader directory](./shaders)
-Or feel free to [download the unitypackage demo](./shaders/UnityCRT%202D%20Demo.unitypackage)
+You can find the files for this project [in the shader directory](../_InternalAssets/unity_crt/shaders)
+Or feel free to [download the unitypackage demo](../_InternalAssets/unity_crt/shaders/UnityCRT%202D%20Demo.unitypackage)
 Just note the fact that none of the CRTs are setup to update in *realtime* since that updates *all the time, even in editor.*
 
 I hope you enjoyed this lengthy endeavour as much as I did! and thank you for reading <3

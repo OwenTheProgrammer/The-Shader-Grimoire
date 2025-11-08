@@ -2,10 +2,59 @@
 
 Here's a random compilation of niche shader things for ya
 
+# Table of Contents
+- [Did you know?](#did-you-know)
+- [Table of Contents](#table-of-contents)
+- [General Shader Things](#general-shader-things)
+	- [Read The ~~Fucking~~ Secret Manual](#read-the-fucking-secret-manual)
+		- [I use VRChat Creator Companion :3](#i-use-vrchat-creator-companion-3)
+		- [I installed through Unity Hub](#i-installed-through-unity-hub)
+		- [I installed with the standalone installers](#i-installed-with-the-standalone-installers)
+		- [I'm cooked..](#im-cooked)
+		- [I'm fucking ROASTED MY GUY](#im-fucking-roasted-my-guy)
+	- [Copy the Manual](#copy-the-manual)
+- [HLSL Shader Things](#hlsl-shader-things)
+	- [Workflow and Creature Comforts](#workflow-and-creature-comforts)
+		- [Customized Shader Templates](#customized-shader-templates)
+		- [Named Passes](#named-passes)
+		- [Properties](#properties)
+			- [(The documentation for these)](#the-documentation-for-these)
+			- [`[HideInInspector]`](#hideininspector)
+			- [`[Header()]`](#header)
+			- [`[Space()]`](#space)
+			- [`[HDR]`](#hdr)
+	- [Actual Shader Code](#actual-shader-code)
+		- [Debug Symbols](#debug-symbols)
+		- [Useful Definitions](#useful-definitions)
+			- [`USING_DIRECTIONAL_LIGHT`](#using_directional_light)
+			- [`USING_STEREO_MATRICES` And Shader API stuff](#using_stereo_matrices-and-shader-api-stuff)
+			- [`SHADER_STAGE_VERTEX` / `SHADER_STAGE_FRAGMENT`](#shader_stage_vertex--shader_stage_fragment)
+			- [`UNITY_UV_STARTS_AT_TOP`](#unity_uv_starts_at_top)
+			- [`UNITY_REVERSED_Z`](#unity_reversed_z)
+	- [Function Definitions](#function-definitions)
+		- [Prototypes](#prototypes)
+		- [Poly-definitions](#poly-definitions)
+	- [Parameter Modifiers / Keywords](#parameter-modifiers--keywords)
+		- [void keyword](#void-keyword)
+		- [in keyword](#in-keyword)
+		- [out keyword](#out-keyword)
+		- [inout keyword](#inout-keyword)
+		- [Interpolation Modifiers](#interpolation-modifiers)
+	- [Structs Are a Thing](#structs-are-a-thing)
+	- [CGINCLUDE for global definitions](#cginclude-for-global-definitions)
+	- [`#include_with_pragmas`](#include_with_pragmas)
+	- [Shader Semantics](#shader-semantics)
+		- [`SV_IsFrontFace`](#sv_isfrontface)
+		- [`SV_VertexID`](#sv_vertexid)
+	- [Cursed Knowledge](#cursed-knowledge)
+		- [Disabling Specific Warnings](#disabling-specific-warnings)
+		- [Inlining Function Arguments](#inlining-function-arguments)
+		- [Intrinsic Overloading](#intrinsic-overloading)
 
-## Shader Developer Tips
 
-### Read The ~~Fucking~~ Secret Manual
+# General Shader Things
+
+## Read The ~~Fucking~~ Secret Manual
 
 You might be wondering "What in the world does UnityObjectToClipPos actually do??" or "How the fuck did you find `unity_SpecCube1_BoxMin`? its no where in the documentation!"
 
@@ -21,7 +70,7 @@ but that location may differ for you.
 
 Need help finding it? I gotchu
 
-#### I use VRChat Creator Companion :3
+### I use VRChat Creator Companion :3
 
 Alright simple enough
 
@@ -40,7 +89,7 @@ You can either Navigate your way to the file path given, except for Unity.exe si
 6. Navigate to the directory named "Data"
 7. You should have "CGIncludes"
 
-#### I installed through Unity Hub
+### I installed through Unity Hub
 
 Cool, that makes things easy.
 
@@ -52,7 +101,7 @@ Cool, that makes things easy.
 6. Nagivate to the directory named "Data"
 7. "CGIncludes" should be a directory in here.
 
-#### I installed with the standalone installers
+### I installed with the standalone installers
 
 Alrighty
 
@@ -71,7 +120,7 @@ If you have a shortcut link to Unity, start from here.
 4. Nagivate to the directory named "Data"
 5. "CGIncludes" should be a directory in here.
 
-#### I'm cooked..
+### I'm cooked..
 
 Still having trouble? theres still a pretty solid way to get the editor folder of unity without hassle.
 
@@ -90,14 +139,14 @@ If you dont have the version of Unity pinned to your taskbar:
 2. Wait a year for it to open
 3. Follow the steps for Unity pinned to taskbar, on the open version of unity.
 
-#### I'm fucking ROASTED MY GUY
+### I'm fucking ROASTED MY GUY
 
 There's no way you're not trolling. I don't know how you would get here honestly, like do you have unity installed? are you on linux? wtf?
 
 do a whole ass computer wide search for "CGIncludes" or go cry man.
 
 
-### Copy the Manual
+## Copy the Manual
 
 Now that you have located the CGIncludes directory by following the steps from the previous section,
 Make a copy of the directory and put it somewhere else, so you can reference these files.
@@ -189,6 +238,10 @@ Which leaves us with the cginc files to keep no matter what you're doing
 - UnityStandardConfig.cginc
 - UnityStandardInput.cginc
 - UnityStandardUtils.cginc
+
+# HLSL Shader Things
+
+## Workflow and Creature Comforts
 
 ### Customized Shader Templates
 
@@ -330,6 +383,72 @@ Pass
 	ENDCG
 }
 ```
+
+### Properties
+
+#### (The documentation for these)
+Go here.
+https://docs.unity3d.com/2021.3/Documentation/ScriptReference/Rendering.ShaderPropertyFlags.html
+
+#### `[HideInInspector]`
+
+As the name suggests, `[HideInInspector]` hides whatever property from the material inspector preview window.
+
+```hlsl
+Properties {
+	[HideInInspector] _MainTex(...
+	...
+```
+
+This is useful for properties that are setup via scripts and custom inspectors, not the end user.
+
+#### `[Header()]`
+
+This adds a title style header above the properties afterward.
+
+```hlsl
+Properties {
+	[Header(Colour Options)]
+	_Color("Color", Color) = (1,1,1,1)
+```
+
+Material Preview:
+![Header section displayed in shader material](../_InternalAssets/did_you_know/media/properties_header.jpg)
+
+> [!WARNING]
+> If you get an error along the lines of
+> `Parse error: syntax error, unexpected $undefined, expecting TVAL_ID or TVAL_VARREF`
+> Then you have used an unsupported character in the header field. Things like ':' will not work.
+
+#### `[Space()]`
+
+Need some space? *moves away*
+
+Anyways, you can add vertical spacing between your properties. I believe the spacing number is in pixels
+
+```hlsl
+Properties {
+	[Header(Colour Options)][Space(5)]
+	_Color("Color", Color) = (1,1,1,1)
+	...
+```
+
+Material Preview:
+![Header section with spacing](../_InternalAssets/did_you_know/media/properties_space.jpg)
+
+
+#### `[HDR]`
+
+Find yourself adding a colour property *and* a brightness slider all the damn time? Well you can mark a color property as `[HDR]` for **H**igh **D**ynamic **R**ange. This converts your colour from `fixed4` 0 to 1, to `half4` 0 to 16.
+
+```hlsl
+Properties {
+	[HDR] _Color("Color", Color) = (4,4,4,4)
+	...
+```
+
+
+## Actual Shader Code
 
 ### Debug Symbols
 
@@ -855,9 +974,6 @@ v2f vert(inputData i)
 ```
 
 This can be extremely useful if you have a baked Vertex Animation Texture (VAT) but keep in mind Unity loves to reorder your meshes vertices.
-
-###
-
 
 ## Cursed Knowledge
 

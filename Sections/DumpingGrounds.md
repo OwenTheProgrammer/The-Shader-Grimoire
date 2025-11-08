@@ -6,7 +6,38 @@ When I come up with either a shader function, or a wacky way to do things, I ~~d
 
 I'm a little tired of rederiving these things, and a little tired of having to document them cleanly, so if you have any further questions, come find me.
 
-I will try to keep things somewhat orderly, for all of tonight, and none of the future commits, but if you'd like to find a specific thing, I do have markers for them, and you can see the readme outline at the top right, right under the "Top" button with an arrow, two buttons from the pencil icon.
+I will try to keep things somewhat orderly, for all of tonight, and none of the future commits
+
+# Table of Contents
+- [The Dumping Grounds](#the-dumping-grounds)
+- [Table of Contents](#table-of-contents)
+  - [Shader Shtuff](#shader-shtuff)
+    - [Reconstruct Normals from Depth Texture](#reconstruct-normals-from-depth-texture)
+    - [RGBA Channel Interpolation](#rgba-channel-interpolation)
+    - [Inverse RGBA Channel Interpolation](#inverse-rgba-channel-interpolation)
+    - [Worldspace scale from the Model Matrix](#worldspace-scale-from-the-model-matrix)
+    - [Model Origin in View Space](#model-origin-in-view-space)
+    - [Distance from Camera to Model Origin](#distance-from-camera-to-model-origin)
+    - [Parameterized Curvy Line](#parameterized-curvy-line)
+    - [Billboard Matrix Construction](#billboard-matrix-construction)
+    - [Look-At Matrix (Y)](#look-at-matrix-y)
+    - [2x2 Matrix Inverse](#2x2-matrix-inverse)
+    - [Hue Shift via Chrominance Rotation](#hue-shift-via-chrominance-rotation)
+    - [Old Bit Noise](#old-bit-noise)
+  - [Approximations](#approximations)
+    - [Arc-cosine `acos(x)`](#arc-cosine-acosx)
+    - [Arc-cosine `acos` again](#arc-cosine-acos-again)
+    - [Atan2 Approximation](#atan2-approximation)
+    - [Error function approximation](#error-function-approximation)
+    - [Blackbody Kelvin to 2deg sRGB](#blackbody-kelvin-to-2deg-srgb)
+  - [Anti-Aliasing](#anti-aliasing)
+    - [A Single Quad](#a-single-quad)
+    - [Terraced Steps](#terraced-steps)
+  - [Quest Screen-Space Stuff](#quest-screen-space-stuff)
+  - [Hilarious / Cursed things](#hilarious--cursed-things)
+    - [Screen aspect ratio, from the Perspective matrix](#screen-aspect-ratio-from-the-perspective-matrix)
+    - [I need the letter A!](#i-need-the-letter-a)
+
 
 ## Shader Shtuff
 
@@ -264,6 +295,16 @@ o.vertex = UnityObjectToClipPos(vpos);
 ...
 ```
 
+### 2x2 Matrix Inverse
+
+Want to undo the actions of a `float2x2` matrix? You're after the matrix inverse.
+
+```hlsl
+float2x2 inverse(float2x2 M) {
+    return float2x2(M._m11, -M._m01, -M._m10, M._m00) / determinant(M);
+}
+```
+
 ### Hue Shift via Chrominance Rotation
 
 ```hlsl
@@ -303,6 +344,28 @@ float3 hueShift( float3 color, float percent) {
 
     // Convert back to RGB
     return mul(yiq_to_rgb, yiq_new);
+}
+```
+
+### Old Bit Noise
+
+I believe these were from the very first commit of this project, they're a little dated but I don't see any reason to *get rid* of them.
+
+```hlsl
+float bitNoise(float uvx) {
+    static const uint2 kernel = uint2(163, 211);
+    uint2 bytes = asuint(float2(uvx, _SinTime.y));
+    uint reg = dot(kernel, bytes) & 255;
+    return float(reg) / 255.0;
+}
+```
+
+```hlsl
+float bitSparkles(float uvx) {
+    static const uint2 kernel = uint2(163, 211);
+    uint2 bytes = asuint(float2(uvx, _SinTime.y));
+    uint reg = dot(kernel, bytes) & 255;
+    return float(reg / 255);
 }
 ```
 
@@ -528,7 +591,7 @@ float erf(float x)
 }
 ```
 
-You can find the details of how I came up with this guy [here.](../ShaderFunctions/details/ErrorFunction.md)
+You can find the details of how I came up with this guy [here.](../Sections/ErrorFunctionApproximation.md)
 
 ### Blackbody Kelvin to 2deg sRGB
 
@@ -606,276 +669,9 @@ float terracedStepAA(float step_count, float x)
 `framebufferfetch` is a cool extension all quests seem to support, but 99% of people will never figure this out because it will appear shader-pink on desktop, including inside unity.
 I have made a few example shaders that support both platforms here.
 
-```hlsl
-Shader "OwenTheProgrammer/SSQuest/AlphaBlend (Unlit)" {
-    Properties {
-        _MainTex("Texture", 2D) = "white" {}
-        [Enum(UnityEngine.Rendering.CullMode)] _Cull("Cull Mode", Int) = 2
-    }
-    CGINCLUDE
-    #include "UnityCG.cginc"
-
-    struct inputData {
-        float4 vertex : POSITION;
-        float2 uv : TEXCOORD0;
-        UNITY_VERTEX_INPUT_INSTANCE_ID
-    };
-
-    struct v2f {
-        float4 vertex : SV_POSITION;
-        float2 uv : TEXCOORD0;
-        UNITY_VERTEX_INPUT_INSTANCE_ID
-        UNITY_VERTEX_OUTPUT_STEREO
-    };
-
-    sampler2D _MainTex;
-    float4 _MainTex_ST;
-
-    v2f vert(inputData i) {
-        v2f o;
-
-        UNITY_SETUP_INSTANCE_ID(i);
-        UNITY_INITIALIZE_OUTPUT(v2f, o);
-        UNITY_TRANSFER_INSTANCE_ID(i, o);
-        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-
-        o.vertex = UnityObjectToClipPos(i.vertex);
-        o.uv = TRANSFORM_TEX(i.uv, _MainTex);
-
-        return o;
-    }
-
-    fixed4 frag(v2f i) {
-        UNITY_SETUP_INSTANCE_ID(i);
-        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
-
-        float4 color = tex2D(_MainTex, i.uv);
-        return float4(color.rgb, i.uv.x);
-    }
-    ENDCG
-
-    SubShader {
-        Tags {
-            "RenderType"="Transparent"
-            "Queue"="Transparent+20"
-            "ForceNoShadowCasting"="True"
-        }
-        Pass {
-            Blend SrcAlpha OneMinusSrcAlpha
-            Name "AlphaBlend Unlit/PC"
-            Cull [_Cull]
-
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag_pc
-            #pragma multi_compile_instancing
-            #pragma exclude_renderers framebufferfetch
-
-            fixed4 frag_pc(v2f i) : SV_TARGET {
-                return frag(i);
-            }
-            ENDCG
-        }
-    }
-    SubShader {
-        Tags {
-            "RenderType"="Transparent"
-            "Queue"="Transparent+20"
-            "ForceNoShadowCasting"="True"
-        }
-        Pass {
-            Name "AlphaBlend Unlit/Quest"
-            Cull [_Cull]
-
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag_quest
-            #pragma multi_compile_instancing
-            #pragma only_renderers framebufferfetch
-
-            void frag_quest(v2f i, inout half4 fragColor : SV_Target) {
-                float4 shader = frag(i);
-                fragColor.rgb = lerp(fragColor.rgb, shader.rgb, shader.a);
-                #if UNITY_REVERSED_Z
-                    float depth = i.vertex.z;
-                #else //UNITY_REVERSED_Z
-                    float depth = 1 - i.vertex.z;
-                #endif //UNITY_REVERSED_Z
-                fragColor.a = i.vertex.z;
-            }
-            ENDCG
-        }
-    }
-}
-```
-
-```hlsl
-Shader "OwenTheProgrammer/SSQuest/DepthWriter (Unlit)" {
-    Properties {
-        _MainTex("Texture", 2D) = "white" {}
-    }
-    SubShader {
-        Tags {
-            "RenderType"="Opaque"
-        }
-        Pass {
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
-            #pragma multi_compile_instancing
-            #pragma only_renderers framebufferfetch
-            #include "UnityCG.cginc"
-
-            struct inputData {
-                float4 vertex : POSITION;
-                float2 uv : TEXCOORD0;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
-            };
-
-            struct v2f {
-                float4 vertex : SV_POSITION;
-                float2 uv : TEXCOORD0;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
-                UNITY_VERTEX_OUTPUT_STEREO
-            };
-
-            sampler2D _MainTex;
-            float4 _MainTex_ST;
-
-            v2f vert(inputData i) {
-                v2f o;
-
-                UNITY_SETUP_INSTANCE_ID(i);
-                UNITY_INITIALIZE_OUTPUT(v2f, o);
-                UNITY_TRANSFER_INSTANCE_ID(i, o);
-                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-
-                o.vertex = UnityObjectToClipPos(i.vertex);
-                o.uv = TRANSFORM_TEX(i.uv, _MainTex);
-                return o;
-            }
-
-            void frag(v2f i, inout half4 fragColor : SV_Target) {
-                UNITY_SETUP_INSTANCE_ID(i);
-                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
-
-                float3 color = tex2D(_MainTex, i.uv);
-
-                // #if UNITY_REVERSED_Z
-                //     float depth = i.vertex.z;
-                // #else //UNITY_REVERSED_Z
-                //     float depth = 1 - i.vertex.z;
-                // #endif //UNITY_REVERSED_Z
-
-                fragColor = half4(color, i.vertex.z);
-            }
-            ENDCG
-        }
-    }
-}
-```
-
-```hlsl
-Shader "OwenTheProgrammer/SSQuest/DepthViewer" {
-    Properties {
-    }
-    CGINCLUDE
-    #include "UnityCG.cginc"
-    #include "SSQ.cginc"
-
-    struct inputData {
-        float4 vertex : POSITION;
-        UNITY_VERTEX_INPUT_INSTANCE_ID
-    };
-
-    struct v2f {
-        float4 vertex : SV_POSITION;
-        float2 screenPos : TEXCOORD0;
-        float3 worldRay : TEXCOORD1;
-        UNITY_VERTEX_INPUT_INSTANCE_ID
-        UNITY_VERTEX_OUTPUT_STEREO
-    };
-
-    v2f vert(inputData i) {
-        v2f o;
-
-        UNITY_SETUP_INSTANCE_ID(i);
-        UNITY_INITIALIZE_OUTPUT(v2f, o);
-        UNITY_TRANSFER_INSTANCE_ID(i, o);
-        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-
-        o.vertex = UnityObjectToClipPos(i.vertex);
-        o.screenPos = ComputeScreenPosVR(o.vertex);
-        o.worldRay = mul(unity_ObjectToWorld, i.vertex) - _WorldSpaceCameraPos;
-
-        return o;
-    }
-    ENDCG
-
-    SubShader {
-        Tags {
-            "RenderType"="Opaque"
-            "ForceNoShadowCasting"="True"
-        }
-        Pass {
-            Name "DepthViewer PC"
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag_pc
-            #pragma exclude_renderers framebufferfetch
-
-            UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
-
-            fixed4 frag_pc(v2f i) : SV_Target {
-                UNITY_SETUP_INSTANCE_ID(i);
-                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
-
-                float iw = 1.0 / i.vertex.w;
-                float2 screenPos = i.screenPos.xy * iw;
-
-                float3 rayDir = normalize(i.worldRay);
-
-                float perspFactor = length(i.worldRay) * iw;
-                float rawDepth = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, screenPos);
-                return float4(rawDepth.rrr, 1);
-                //float eyeDepth = LinearEyeDepthVR(screenPos, rawDepth) * perspFactor;
-
-                // return float4(eyeDepth.rrr / 20.0, 1);
-            }
-            ENDCG
-        }
-    }
-    SubShader {
-        Tags {
-            "RenderType"="Opaque"
-            "ForceNoShadowCasting"="True"
-        }
-        Pass {
-            Name "DepthViewer Quest"
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag_quest
-            #pragma multi_compile_instancing
-            #pragma only_renderers framebufferfetch
-
-            void frag_quest(v2f i, inout half4 fragColor : SV_Target) {
-                UNITY_SETUP_INSTANCE_ID(i);
-                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
-                fragColor.rgb = fragColor.aaa;
-
-                // float3 rayDir = normalize(i.worldRay);
-
-                // float perspFactor = length(i.worldRay) * iw;
-                // float rawDepth = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, screenPos);
-                // float eyeDepth = LinearEyeDepthVR(screenPos, rawDepth) * perspFactor;
-
-                // return float4(eyeDepth.rrr / 20.0, 1);
-            }
-            ENDCG
-        }
-    }
-}
-```
+- [AlphaBlend (Unlit)](../_InternalAssets/dumping_grounds/screen_space_quest/AlphaBlendUnlit.shader)
+- [DepthWrite](../_InternalAssets/dumping_grounds/screen_space_quest/DepthWrite.shader)
+- [DepthRead](../_InternalAssets/dumping_grounds/screen_space_quest/DepthRead.shader)
 
 
 ## Hilarious / Cursed things

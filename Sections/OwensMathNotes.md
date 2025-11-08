@@ -5,3 +5,6 @@ As I figure things out in the wonderful world of math, I might post a roughly po
 A lot of these notes are probably *not* beginner friendly, but if I'm going to spend months learning a topic, I see no point in gate keeping the knowledge. Feel free to come find me and ask.
 
 Alright love ya, have a good day :purple_heart:
+
+## Notes
+- [Greens Theorem Reversed](../_InternalAssets/owens_math_notes/greens_theorem_reversed/rev2.pdf)

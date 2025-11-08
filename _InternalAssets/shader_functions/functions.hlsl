@@ -18,7 +18,7 @@ float sgn(float x)
     const uint F32_SGN = asuint((float)(-1)) & (~F32_ONE);
     return asfloat( (asuint(x) & F32_SGN) + F32_ONE );
 #else
-    return 1 - 2 * float(x < 0);
+    return (x < 0 ? -1 : 1);
 #endif //SHADER_TARGET 3.5+
 }
 PROTO_F234(sgn)
