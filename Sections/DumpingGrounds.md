@@ -24,6 +24,7 @@ I will try to keep things somewhat orderly, for all of tonight, and none of the 
     - [2x2 Matrix Inverse](#2x2-matrix-inverse)
     - [Hue Shift via Chrominance Rotation](#hue-shift-via-chrominance-rotation)
     - [Old Bit Noise](#old-bit-noise)
+    - [Calculate Shortest Angle Delta](#calculate-shortest-angle-delta)
   - [Approximations](#approximations)
     - [Arc-cosine `acos(x)`](#arc-cosine-acosx)
     - [Arc-cosine `acos` again](#arc-cosine-acos-again)
@@ -368,6 +369,40 @@ float bitSparkles(float uvx) {
     return float(reg / 255);
 }
 ```
+
+### Calculate Shortest Angle Delta
+
+Ever found yourself currently at 30 degrees and you want to be at 300?
+
+```math
+\begin{aligned}
+    \Delta &= \theta_{\text{new}} - \theta_{\text{old}} \\
+    \theta &= \bmod\left(\theta_{\text{old}} + t \cdot \Delta, 2\pi\right) && \text{or lerp}\left(\theta_{\text{old}}, \Delta, t\right)
+\end{aligned}
+```
+Of course you rotate 270 degrees around the- no.
+you rotate -90 degrees! but.. how?
+
+well the real answer in radians is
+```math
+\begin{aligned}
+    \Delta &=
+    \bmod\left(\theta_{\text{new}} - \theta_{\text{old}} \textcolor{blue}{ + \pi}, 2\pi\right) \textcolor{blue}{ - \pi} \\
+    &= \mathrm{frac}\left(\frac{1}{2\pi} x - \frac{1}{2}\right) \cdot 2\pi - \pi
+\end{aligned}
+```
+
+```hlsl
+// Calculates the shortest angle delta
+float calculate_angle_delta(float from_rad, float to_rad) {
+    return frac(INV_TWO_PI * x - 0.5) * TWO_PI - PI;
+}
+...
+float dt = calculate_angle_delta(old_angle, target_angle);
+float angle = lerp(old_angle, dt, some_time_step);
+...
+```
+
 
 ## Approximations
 
