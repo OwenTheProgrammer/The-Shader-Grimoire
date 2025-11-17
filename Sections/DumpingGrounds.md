@@ -14,6 +14,7 @@ I will try to keep things somewhat orderly, for all of tonight, and none of the 
   - [Shader Shtuff](#shader-shtuff)
     - [Reconstruct Normals from Depth Texture](#reconstruct-normals-from-depth-texture)
     - [Basis View-plane Vectors from ScreenPos](#basis-view-plane-vectors-from-screenpos)
+    - [Vertical and Horizontal FOV from Inverse Projection](#vertical-and-horizontal-fov-from-inverse-projection)
     - [RGBA Channel Interpolation](#rgba-channel-interpolation)
     - [Inverse RGBA Channel Interpolation](#inverse-rgba-channel-interpolation)
     - [Worldspace scale from the Model Matrix](#worldspace-scale-from-the-model-matrix)
@@ -115,9 +116,9 @@ Personally I use this macro instead lol
 ### Basis View-plane Vectors from ScreenPos
 
 This constructs a basis coordinate system (x,y,z) from a screenspace position.
-- The X vector (column 1) represents the "right" direction of the viewing plane
-- The Y vector (column 2) represents the "up" direction of the viewing plane
-- The Z vector (column 3) points towards the camera, representing the view plane "up" vector
+- The X vector (`i` in column 1) represents the "right" direction of the viewing plane
+- The Y vector (`j` in column 2) represents the "forward" direction of the viewing plane
+- The Z vector (`k` in column 3) points towards the camera, representing the view plane "up" vector
 
 ```hlsl
 float3x3 screenToViewBasis(float2 screenPos)
@@ -139,6 +140,12 @@ As shown in this image, just with the vectors at the origin instead.
 > [!NOTE]
 > This matrix is orthonormal as well, meaning its inverse is its transpose. The inverse would represent a transformation from the view-plane back to view coordinates.
 
+### Vertical and Horizontal FOV from Inverse Projection
+
+```hlsl
+float fov_v = 2 * atan(unity_CameraInvProjection._m11); // Vertical FOV (The default camera fov slider one)
+float fov_h = 2 * atan(unity_CameraInvProjection._m00); // Horizontal FOV
+```
 
 ### RGBA Channel Interpolation
 
