@@ -13,6 +13,7 @@ I will try to keep things somewhat orderly, for all of tonight, and none of the 
 - [Table of Contents](#table-of-contents)
   - [Shader Shtuff](#shader-shtuff)
     - [Reconstruct Normals from Depth Texture](#reconstruct-normals-from-depth-texture)
+    - [Basis View-plane Vectors from ScreenPos](#basis-view-plane-vectors-from-screenpos)
     - [RGBA Channel Interpolation](#rgba-channel-interpolation)
     - [Inverse RGBA Channel Interpolation](#inverse-rgba-channel-interpolation)
     - [Worldspace scale from the Model Matrix](#worldspace-scale-from-the-model-matrix)
@@ -110,6 +111,34 @@ Personally I use this macro instead lol
         _NORMAL = normalize(_normal);  \
     }
 ```
+
+### Basis View-plane Vectors from ScreenPos
+
+This constructs a basis coordinate system (x,y,z) from a screenspace position.
+- The X vector (column 1) represents the "right" direction of the viewing plane
+- The Y vector (column 2) represents the "up" direction of the viewing plane
+- The Z vector (column 3) points towards the camera, representing the view plane "up" vector
+
+```hlsl
+float3x3 screenToViewBasis(float2 screenPos)
+{
+    float2 vs = screenPos * 2 - 1;
+    float2 p = vs * unity_CameraInvProjection._m00_m11;
+    float3 k = -normalize(float3(p.xy, 1));
+    float3 i = normalize(float3(-k.z, 0, k.x));
+    float3 j = float3(-i.z * k.y, i.z * k.x - i.x * k.z, i.x * k.y);
+    return transpose(float3x3(i, j, k));
+}
+```
+
+As shown in this image, just with the vectors at the origin instead.
+<p align="center">
+    <img src="../_InternalAssets/dumping_grounds/media/basis_from_screenpos.png" width="50%"/>
+</p>
+
+> [!NOTE]
+> This matrix is orthonormal as well, meaning its inverse is its transpose. The inverse would represent a transformation from the view-plane back to view coordinates.
+
 
 ### RGBA Channel Interpolation
 
