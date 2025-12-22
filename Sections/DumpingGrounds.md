@@ -152,7 +152,7 @@ Basically we want to tilt our head such that $\mathbf{a}$ is our new x-axis loca
 Mathematically speaking, we want
 
 $$
-\mathbf{R}\!\left(\theta\right)
+\mathbf{R}\left(\theta\right)
 \begin{bmatrix}
     \mathbf{a} & \mathbf{b}
 \end{bmatrix} =
@@ -173,7 +173,7 @@ $$
 We can solve $\mathbf{a}'$ directly since rotations are scale-invariant operations, meaning the scale of vectors dont change when rotated.
 
 $$
-    \mathbf{R}\!\left(\theta\right)\left(\lambda \mathbf{x}\right) = \lambda \left(\mathbf{R}\!\left(\theta\right)\mathbf{x}\right)
+    \mathbf{R}\left(\theta\right)\left(\lambda \mathbf{x}\right) = \lambda \left(\mathbf{R}\left(\theta\right)\mathbf{x}\right)
 $$
 
 This implies $\mathbf{a}' = \|\mathbf{a}\| \hat{x}$ where $\hat{x}=\left[1, 0\right]^T$ representing the x-axis, and $\|\mathbf{a}\|$ is the magnitude or length of $\mathbf{a}$
@@ -185,7 +185,7 @@ Since $\angle\mathbf{ab}$ is the same as $\angle\mathbf{a}'\mathbf{b}'$, and $\m
 
 $$
 \begin{aligned}
-\mathbf{b}' &= \mathbf{R}\!\left(\angle\mathbf{ab}\right)\left( \|\mathbf{b}\| \hat{x} \right) \\
+\mathbf{b}' &= \mathbf{R}\left(\angle\mathbf{ab}\right)\left( \|\mathbf{b}\| \hat{x} \right) \\
 &=
 \begin{bmatrix}
     \cos(\angle\mathbf{ab}) & -\sin(\angle\mathbf{ab}) \\
@@ -208,8 +208,8 @@ Now all we have to do is compute the angle between $\mathbf{a}$ and $\mathbf{b}$
 
 $$
 \angle\mathbf{ab}
-= \arccos\!\left(\frac{\mathbf{a} \bullet \mathbf{b}}{\|\mathbf{a}\|\|\mathbf{b}\|}\right)
-= \arcsin\!\left(\frac{\mathbf{a} \times \mathbf{b}}{\|\mathbf{a}\|\|\mathbf{b}\|}\right)
+= \arccos\left(\frac{\mathbf{a} \bullet \mathbf{b}}{\|\mathbf{a}\|\|\mathbf{b}\|}\right)
+= \arcsin\left(\frac{\mathbf{a} \times \mathbf{b}}{\|\mathbf{a}\|\|\mathbf{b}\|}\right)
 $$
 
 where $\bullet$ represents the vector dot product, and $\times$ represents the 2D vector cross product.
@@ -220,8 +220,8 @@ $$
 \begin{aligned}
 \mathbf{b}' &= \|\mathbf{b}\|
 \begin{bmatrix}
-    \cancel{\cos}\left(\cancel{\arccos}\!\left(\frac{\mathbf{a} \bullet \mathbf{b}}{\|\mathbf{a}\|\|\mathbf{b}\|}\right)\right) \\
-    \cancel{\sin}\left(\cancel{\arcsin}\!\left(\frac{\mathbf{a} \times \mathbf{b}}{\|\mathbf{a}\|\|\mathbf{b}\|}\right)\right)
+    \cancel{\cos}\left(\cancel{\arccos}\left(\frac{\mathbf{a} \bullet \mathbf{b}}{\|\mathbf{a}\|\|\mathbf{b}\|}\right)\right) \\
+    \cancel{\sin}\left(\cancel{\arcsin}\left(\frac{\mathbf{a} \times \mathbf{b}}{\|\mathbf{a}\|\|\mathbf{b}\|}\right)\right)
 \end{bmatrix} \\
 &=
 \cancel{\|\mathbf{b}\|}
@@ -280,13 +280,35 @@ $$
 \end{aligned}
 $$
 
-Given $\mathbf{a} \bullet \mathbf{b} = \begin{bmatrix} \mathbf{a}_x & \mathbf{a}_y\end{bmatrix} \begin{bmatrix}\mathbf{b}_x \\ \mathbf{b}_y\end{bmatrix}$ 
-and $\mathbf{a} \times \mathbf{b} = \begin{bmatrix}-\mathbf{a}_y & \mathbf{a}_x\end{bmatrix} \begin{bmatrix}\mathbf{b}_x \\ \mathbf{b}_y\end{bmatrix}$,
+Given
+
+$$
+\mathbf{a} \bullet \mathbf{b} =
+\begin{bmatrix}
+    \mathbf{a}_x & \mathbf{a}_y
+\end{bmatrix}
+\begin{bmatrix}
+    \mathbf{b}_x \\
+    \mathbf{b}_y
+\end{bmatrix}
+$$
+
+and
+
+$$
+\mathbf{a} \times \mathbf{b} =
+\begin{bmatrix}
+    -\mathbf{a}_y & \mathbf{a}_x
+\end{bmatrix}
+\begin{bmatrix}
+    \mathbf{b}_x \\
+    \mathbf{b}_y
+\end{bmatrix}
+$$
+
 we can represent this as a 2x2 matrix multiplication.
 
 $$
-\underset{\mathbf{R}\!\left(\theta\right)}{
-\underline{
 \left(
 \frac{1}{\|\mathbf{a}\|}
 \begin{bmatrix}
@@ -294,7 +316,6 @@ $$
     -\mathbf{a}_y & \mathbf{a}_x
 \end{bmatrix}
 \right)
-}}
 \begin{bmatrix}
     \mathbf{a}_x & \mathbf{b}_x \\
     \mathbf{a}_y & \mathbf{b}_y
