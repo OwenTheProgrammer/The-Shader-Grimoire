@@ -9,38 +9,41 @@ I'm a little tired of rederiving these things, and a little tired of having to d
 I will try to keep things somewhat orderly, for all of tonight, and none of the future commits
 
 # Table of Contents
-- [The Dumping Grounds](#the-dumping-grounds)
-- [Table of Contents](#table-of-contents)
-  - [Shader Shtuff](#shader-shtuff)
-    - [Reconstruct Normals from Depth Texture](#reconstruct-normals-from-depth-texture)
-    - [Basis View-plane Vectors from ScreenPos](#basis-view-plane-vectors-from-screenpos)
-    - [Vertical and Horizontal FOV from Inverse Projection](#vertical-and-horizontal-fov-from-inverse-projection)
-    - [RGBA Channel Interpolation](#rgba-channel-interpolation)
-    - [Inverse RGBA Channel Interpolation](#inverse-rgba-channel-interpolation)
-    - [Worldspace scale from the Model Matrix](#worldspace-scale-from-the-model-matrix)
-    - [Model Origin in View Space](#model-origin-in-view-space)
-    - [Distance from Camera to Model Origin](#distance-from-camera-to-model-origin)
-    - [Parameterized Curvy Line](#parameterized-curvy-line)
-    - [Billboard Matrix Construction](#billboard-matrix-construction)
-    - [Look-At Matrix (Y)](#look-at-matrix-y)
-    - [2x2 Matrix Inverse](#2x2-matrix-inverse)
-    - [Hue Shift via Chrominance Rotation](#hue-shift-via-chrominance-rotation)
-    - [Old Bit Noise](#old-bit-noise)
-    - [Calculate Shortest Angle Delta](#calculate-shortest-angle-delta)
-  - [Approximations](#approximations)
-    - [Arc-cosine `acos(x)`](#arc-cosine-acosx)
-    - [Arc-cosine `acos` again](#arc-cosine-acos-again)
-    - [Atan2 Approximation](#atan2-approximation)
-    - [Error function approximation](#error-function-approximation)
-    - [Blackbody Kelvin to 2deg sRGB](#blackbody-kelvin-to-2deg-srgb)
-  - [Anti-Aliasing](#anti-aliasing)
-    - [A Single Quad](#a-single-quad)
-    - [Terraced Steps](#terraced-steps)
-  - [Quest Screen-Space Stuff](#quest-screen-space-stuff)
-  - [Hilarious / Cursed things](#hilarious--cursed-things)
-    - [Screen aspect ratio, from the Perspective matrix](#screen-aspect-ratio-from-the-perspective-matrix)
-    - [I need the letter A!](#i-need-the-letter-a)
+<!-- mtoc-start -->
 
+- [Shader Shtuff](#shader-shtuff)
+  - [Reconstruct Normals from Depth Texture](#reconstruct-normals-from-depth-texture)
+  - [Basis View-plane Vectors from ScreenPos](#basis-view-plane-vectors-from-screenpos)
+  - [Orthonormal Basis from 2D Axes](#orthonormal-basis-from-2d-axes)
+  - [Vertical and Horizontal FOV from Inverse Projection](#vertical-and-horizontal-fov-from-inverse-projection)
+  - [RGBA Channel Interpolation](#rgba-channel-interpolation)
+  - [Inverse RGBA Channel Interpolation](#inverse-rgba-channel-interpolation)
+  - [Worldspace scale from the Model Matrix](#worldspace-scale-from-the-model-matrix)
+  - [Model Origin in View Space](#model-origin-in-view-space)
+  - [Distance from Camera to Model Origin](#distance-from-camera-to-model-origin)
+  - [Parameterized Curvy Line](#parameterized-curvy-line)
+  - [Billboard Matrix Construction](#billboard-matrix-construction)
+  - [Look-At Matrix (Y)](#look-at-matrix-y)
+  - [2x2 Matrix Inverse](#2x2-matrix-inverse)
+  - [Hue Shift via Chrominance Rotation](#hue-shift-via-chrominance-rotation)
+  - [Old Bit Noise](#old-bit-noise)
+  - [Calculate Shortest Angle Delta](#calculate-shortest-angle-delta)
+- [Approximations](#approximations)
+  - [`1/3` Order Chebyshev Function `cos(acos(x)/3)`](#13-order-chebyshev-function-cosacosx3)
+  - [Arc-cosine `acos(x)`](#arc-cosine-acosx)
+  - [Arc-cosine `acos` again](#arc-cosine-acos-again)
+  - [Atan2 Approximation](#atan2-approximation)
+  - [Error function approximation](#error-function-approximation)
+  - [Blackbody Kelvin to 2deg sRGB](#blackbody-kelvin-to-2deg-srgb)
+- [Anti-Aliasing](#anti-aliasing)
+  - [A Single Quad](#a-single-quad)
+  - [Terraced Steps](#terraced-steps)
+- [Quest Screen-Space Stuff](#quest-screen-space-stuff)
+- [Hilarious / Cursed things](#hilarious--cursed-things)
+  - [Screen aspect ratio, from the Perspective matrix](#screen-aspect-ratio-from-the-perspective-matrix)
+  - [I need the letter A!](#i-need-the-letter-a)
+
+<!-- mtoc-end -->
 
 ## Shader Shtuff
 
@@ -139,6 +142,185 @@ As shown in this image, just with the vectors at the origin instead.
 
 > [!NOTE]
 > This matrix is orthonormal as well, meaning its inverse is its transpose. The inverse would represent a transformation from the view-plane back to view coordinates.
+
+### Orthonormal Basis from 2D Axes
+
+Say you have vectors $\mathbf{a} = \left[\mathbf{a}_x, \mathbf{a}_y \right]^T$ and $\mathbf{b} = \left[\mathbf{b}_x, \mathbf{b}_y\right]^T$
+and you want to rotate them such that $\mathbf{a}$ is aligned with the global X axis.
+This is equivalent to finding the transformation to an "orthonormal basis" of $\mathbf{a}$ and $\mathbf{b}$.
+Basically we want to tilt our head such that $\mathbf{a}$ is our new x-axis locally.
+Mathematically speaking, we want
+
+$$
+\mathbf{R}\!\left(\theta\right)
+\begin{bmatrix}
+    \mathbf{a} & \mathbf{b}
+\end{bmatrix} =
+\begin{bmatrix}
+    \cos(\theta) & -\sin(\theta) \\
+    \sin(\theta) & \cos(\theta)
+\end{bmatrix}
+\begin{bmatrix}
+    \mathbf{a}_x & \mathbf{b}_x \\
+    \mathbf{a}_y & \mathbf{b}_y
+\end{bmatrix} =
+\begin{bmatrix}
+    \| \mathbf{a} \| & \mathbf{b}'_x \\
+    0 & \mathbf{b}'_y
+\end{bmatrix}
+$$
+
+We can solve $\mathbf{a}'$ directly since rotations are scale-invariant operations, meaning the scale of vectors dont change when rotated.
+
+$$
+    \mathbf{R}\!\left(\theta\right)\left(\lambda \mathbf{x}\right) = \lambda \left(\mathbf{R}\!\left(\theta\right)\mathbf{x}\right)
+$$
+
+This implies $\mathbf{a}' = \|\mathbf{a}\| \hat{x}$ where $\hat{x}=\left[1, 0\right]^T$ representing the x-axis, and $\|\mathbf{a}\|$ is the magnitude or length of $\mathbf{a}$
+
+
+Solving for $\mathbf{b}'$ requires a bit more work though. Rotations are angle-invariant as well, meaning angles between vectors are preserved when rotated.
+This lets us define $\mathbf{b}'$ locally with respect to $\mathbf{a}'$ since we know $\mathbf{a}$ is our local x-axis.
+Since $\angle\mathbf{ab}$ is the same as $\angle\mathbf{a}'\mathbf{b}'$, and $\mathbf{a}' = \|\mathbf{a}\|\hat{x}$, we can instead solve for
+
+$$
+\begin{aligned}
+\mathbf{b}' &= \mathbf{R}\!\left(\angle\mathbf{ab}\right)\left( \|\mathbf{b}\| \hat{x} \right) \\
+&=
+\begin{bmatrix}
+    \cos(\angle\mathbf{ab}) & -\sin(\angle\mathbf{ab}) \\
+    \sin(\angle\mathbf{ab}) & \cos(\angle\mathbf{ab})
+\end{bmatrix}
+\begin{bmatrix}
+    \|\mathbf{b}\| \\
+    0
+\end{bmatrix} \\
+&=
+\|\mathbf{b}\|
+\begin{bmatrix}
+    \cos(\angle\mathbf{ab}) \\
+    \sin(\angle\mathbf{ab})
+\end{bmatrix}
+\end{aligned}
+$$
+
+Now all we have to do is compute the angle between $\mathbf{a}$ and $\mathbf{b}$
+
+$$
+\angle\mathbf{ab}
+= \arccos\!\left(\frac{\mathbf{a} \bullet \mathbf{b}}{\|\mathbf{a}\|\|\mathbf{b}\|}\right)
+= \arcsin\!\left(\frac{\mathbf{a} \times \mathbf{b}}{\|\mathbf{a}\|\|\mathbf{b}\|}\right)
+$$
+
+where $\bullet$ represents the vector dot product, and $\times$ represents the 2D vector cross product.
+
+We can use which ever inverse cancels out which ever term in $\mathbf{b}'$ from before, to remove all trig functions.
+
+$$
+\begin{aligned}
+\mathbf{b}' &= \|\mathbf{b}\|
+\begin{bmatrix}
+    \cancel{\cos}\left(\cancel{\arccos}\!\left(\frac{\mathbf{a} \bullet \mathbf{b}}{\|\mathbf{a}\|\|\mathbf{b}\|}\right)\right) \\
+    \cancel{\sin}\left(\cancel{\arcsin}\!\left(\frac{\mathbf{a} \times \mathbf{b}}{\|\mathbf{a}\|\|\mathbf{b}\|}\right)\right)
+\end{bmatrix} \\
+&=
+\cancel{\|\mathbf{b}\|}
+\begin{bmatrix}
+    \frac{\mathbf{a} \bullet \mathbf{b}}{\|\mathbf{a}\|\cancel{\|\mathbf{b}\|}} &
+    \frac{\mathbf{a} \times \mathbf{b}}{\|\mathbf{a}\|\cancel{\|\mathbf{b}\|}}
+\end{bmatrix}^T \\
+&=
+\frac{1}{\|\mathbf{a}\|}
+\begin{bmatrix}
+    \mathbf{a} \bullet \mathbf{b} &
+    \mathbf{a} \times \mathbf{b}
+\end{bmatrix}^T
+\end{aligned}
+$$
+
+which gives us our final values
+
+$$
+\begin{aligned}
+\mathbf{a}'_x &= \sqrt{\mathbf{a}_x^2 + \mathbf{a}_y^2}
+&
+\mathbf{a}'_y &= 0 \\
+\mathbf{b}'_x &= \frac{\mathbf{a}_x \mathbf{b}_x + \mathbf{a}_y \mathbf{b}_y}{\sqrt{\mathbf{a}_x^2 + \mathbf{a}_y^2}}
+&
+\mathbf{b}'_y &= \frac{\mathbf{a}_x \mathbf{b}_y - \mathbf{b}_x \mathbf{a}_y}{\sqrt{\mathbf{a}_x^2 + \mathbf{a}_y^2}}
+\end{aligned}
+$$
+
+More interestingly, because $\frac{x}{\sqrt{x}} = \sqrt{x}$ and $\mathbf{x} \times \mathbf{x} = 0$, we can form a more intuitive definition.
+
+$$
+\begin{aligned}
+\mathbf{a}'_x &= \frac{\mathbf{a}_x^2 + \mathbf{a}_y^2}{\sqrt{\mathbf{a}_x^2 + \mathbf{a}_y^2}}
+&
+\mathbf{a}'_y &= \frac{\mathbf{a}_x\mathbf{a}_y - \mathbf{a}_y\mathbf{a}_x}{\sqrt{\mathbf{a}_x^2 + \mathbf{a}_y^2}} \\
+\mathbf{b}'_x &= \frac{\mathbf{a}_x\mathbf{b}_x + \mathbf{a}_y\mathbf{b}_y}{\sqrt{\mathbf{a}_x^2 + \mathbf{a}_y^2}}
+&
+\mathbf{b}'_y &= \frac{\mathbf{a}_x\mathbf{b}_y - \mathbf{b}_x \mathbf{a}_y}{\sqrt{\mathbf{a}_x^2 + \mathbf{a}_y^2}}
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+\mathbf{a}' &= \frac{1}{\|\mathbf{a}\|}
+\begin{bmatrix}
+    \mathbf{a} \bullet \mathbf{a} \\
+    \mathbf{a} \times \mathbf{a}
+\end{bmatrix}
+&
+\mathbf{b}' &= \frac{1}{\|\mathbf{a}\|}
+\begin{bmatrix}
+    \mathbf{a} \bullet \mathbf{b} \\
+    \mathbf{a} \times \mathbf{b}
+\end{bmatrix}
+\end{aligned}
+$$
+
+Given $\mathbf{a} \bullet \mathbf{b} = \begin{bmatrix} \mathbf{a}_x & \mathbf{a}_y\end{bmatrix} \begin{bmatrix}\mathbf{b}_x \\ \mathbf{b}_y\end{bmatrix}$ 
+and $\mathbf{a} \times \mathbf{b} = \begin{bmatrix}-\mathbf{a}_y & \mathbf{a}_x\end{bmatrix} \begin{bmatrix}\mathbf{b}_x \\ \mathbf{b}_y\end{bmatrix}$,
+we can represent this as a 2x2 matrix multiplication.
+
+$$
+\underset{\mathbf{R}\!\left(\theta\right)}{
+\underline{
+\left(
+\frac{1}{\|\mathbf{a}\|}
+\begin{bmatrix}
+    \mathbf{a}_x & \mathbf{a}_y \\
+    -\mathbf{a}_y & \mathbf{a}_x
+\end{bmatrix}
+\right)
+}}
+\begin{bmatrix}
+    \mathbf{a}_x & \mathbf{b}_x \\
+    \mathbf{a}_y & \mathbf{b}_y
+\end{bmatrix}
+$$
+
+... Ah. yes. of course...
+So fun fact, if you normalize a vector, it can be represented as $\left[\cos(\theta), \sin(\theta)\right]$..
+Which the rotation matrix $\mathbf{R}\!\left(\theta\right)$ is completely constructed from $\mathbf{a}$, except with the opposite rotation..
+
+Just goes to show, I am very good at missing things that are obvious, only after I've gone through the lengthy derivation.
+
+heres the hlsl code lol
+
+```hlsl
+float2x2 worldToOrthogonal(float2 local_x) {
+    float2 a = normalize(local_x);
+    return float2x2(a.x, a.y, -a.y, a.x);
+}
+
+float2x2 localizeAxes2D(float2 a, float2 b) {
+    return mul(worldToOrthogonal(a), transpose(float2x2(a, b)));
+}
+```
+
+
 
 ### Vertical and Horizontal FOV from Inverse Projection
 
@@ -410,23 +592,24 @@ float bitSparkles(float uvx) {
 
 Ever found yourself currently at 30 degrees and you want to be at 300?
 
-```math
+$$
 \begin{aligned}
     \Delta &= \theta_{\text{new}} - \theta_{\text{old}} \\
     \theta &= \bmod\left(\theta_{\text{old}} + t \cdot \Delta, 2\pi\right) && \text{or lerp}\left(\theta_{\text{old}}, \Delta, t\right)
 \end{aligned}
-```
+$$
+
 Of course you rotate 270 degrees around the- no.
 you rotate -90 degrees! but.. how?
 
 well the real answer in radians is
-```math
+$$
 \begin{aligned}
     \Delta &=
     \bmod\left(\theta_{\text{new}} - \theta_{\text{old}} \textcolor{blue}{ + \pi}, 2\pi\right) \textcolor{blue}{ - \pi} \\
     &= \mathrm{frac}\left(\frac{1}{2\pi} x - \frac{1}{2}\right) \cdot 2\pi - \pi
 \end{aligned}
-```
+$$
 
 ```hlsl
 // Calculates the shortest angle delta
@@ -441,6 +624,36 @@ float angle = lerp(old_angle, dt, some_time_step);
 
 
 ## Approximations
+
+### `1/3` Order Chebyshev Function `cos(acos(x)/3)`
+
+Computing the cosine of one-third arccosine of x is a weird one, and you'll probably never need it.. but I needed it so here it is.
+
+I used good ol mathematica to find the best suited `w` exponent
+```mathematica
+f[x_] := Cos[ArcCos[x]/3];
+g[x_, w_] := Power[(x + 1) / 2, w] * 1/2 + 1/2;
+
+NMinimize[
+  NIntegrate[ (f[x] - g[x, w])^2, {x, -1, 1}],
+  0 <= w <= 1, w
+]
+
+> {4.7357216555478056`*^-6,{w->0.45596877882443965`}}
+```
+
+$$
+\cos\left(\frac{\arccos(\theta)}{3}\right) \approx \frac{\left(\theta + 1\right)^w}{2^{w+1}} + \frac{1}{2} \quad w = 0.45596877
+$$
+
+and in shader code
+
+```hlsl
+// Approximation of cos(acos(x)/3)
+float ccinv1_3(float x) {
+    return pow(x + 1, 0.45596877) * 0.36451024 + 0.5;
+}
+```
 
 ### Arc-cosine `acos(x)`
 
@@ -762,3 +975,4 @@ float legs = abs(1.06-3.53*abs(i.uv.x-0.5)-i.uv.y);
 legs = step(legs,0.22)*step(abs(i.uv.y-0.5),0.46);
 float letterA = saturate(amid + legs);
 ```
+
