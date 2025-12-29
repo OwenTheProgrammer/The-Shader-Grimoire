@@ -53,7 +53,7 @@ Technically, I really should make a whole blog thing about how this one works, a
 You can quite easily derive the basis vectors (tangent, bitangent) as well, since my method *solves the plane of best fit on 9 points* which is defined in terms of a basis xyz system.
 
 > [!NOTE]
-> The normals are reconstructed slightly skewed, to skate around the fact that a homogenous reconstruction of a plane, local to the plane, will always result in a degenerate form. Bla-bla-bla, the normal of any surface, when you're standing on the surface will be "up" for you. AKA the normals would just reconstruct to (0, 0, 1)
+> The normals are reconstructed slightly skewed because the plane reconstruction uses Ordinary Least Squares (OLS) which minimizes vertical distances. At some point I will update this to use either Total Least Squares (TLS) or some closed form singular value decomposition which minimizes the projective distances, and is the more correct way of solving this problem.
 
 ```hlsl
 float sampleRawDepth(float2 uv) { return SAMPLE_DEPTH_TEXTURE_LOD(_CameraDepthTexture, float4(uv, 0, 0)); }
@@ -324,7 +324,7 @@ $$
 
 ... Ah. yes. of course...
 So fun fact, if you normalize a vector, it can be represented as $\left[\cos(\theta), \sin(\theta)\right]$..
-Which the rotation matrix $\mathbf{R}\!\left(\theta\right)$ is completely constructed from $\mathbf{a}$, except with the opposite rotation..
+Which the rotation matrix $\mathbf{R}\left(\theta\right)$ is completely constructed from $\mathbf{a}$, except with the opposite rotation..
 
 Just goes to show, I am very good at missing things that are obvious, only after I've gone through the lengthy derivation.
 
@@ -624,6 +624,7 @@ Of course you rotate 270 degrees around the- no.
 you rotate -90 degrees! but.. how?
 
 well the real answer in radians is
+
 $$
 \begin{aligned}
     \Delta &=
