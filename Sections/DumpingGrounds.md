@@ -14,6 +14,7 @@ I will try to keep things somewhat orderly, for all of tonight, and none of the 
 - [Shader Shtuff](#shader-shtuff)
   - [Reconstruct Normals from Depth Texture](#reconstruct-normals-from-depth-texture)
   - [Basis View-plane Vectors from ScreenPos](#basis-view-plane-vectors-from-screenpos)
+  - [Orthonormal Basis from 3D vectors](#orthonormal-basis-from-3d-vectors)
   - [Orthonormal Basis from 2D Axes](#orthonormal-basis-from-2d-axes)
   - [Vertical and Horizontal FOV from Inverse Projection](#vertical-and-horizontal-fov-from-inverse-projection)
   - [RGBA Channel Interpolation](#rgba-channel-interpolation)
@@ -142,6 +143,137 @@ As shown in this image, just with the vectors at the origin instead.
 
 > [!NOTE]
 > This matrix is orthonormal as well, meaning its inverse is its transpose. The inverse would represent a transformation from the view-plane back to view coordinates.
+
+### Orthonormal Basis from 3D vectors
+
+If you have two 3D vectors, you can construct a 3D xyz basis system from them. Technically this is an extended version of the [Gram-Schmidt process](https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process).
+
+Let's say you have a 3D vector $\vec{U}$ and another vector $\vec{V}$ which is non-collinear with the other one (they aren't directly in-line with each other)
+we can normalize them to remove scale, let $\vec{u} = \vec{U} / \|\vec{U}\|$ and $\vec{v} = \vec{V} / \|\vec{V}\|$ where $\|\vec{x}\|$ represents the magnitude or "length" of $\vec{x}$.
+
+If we treat $\vec{u}$ as the local $\hat{x}$ axis, and $\vec{v}$ as a rotated version of the $\hat{y}$ axis, we can construct a vector thats *orthogonal* (perpendicular) to both vectors, using the cross product.
+
+$$
+\vec{a} \times \vec{b} = \|\vec{a}\| \|\vec{b} \| \sin\left(\theta\right) \vec{n}
+$$
+
+where $\vec{n}$ is a vector perpendicular to both $\vec{u}$ and $\vec{v}$, and $\theta$ is the angle between the two vectors.
+
+$$
+\vec{u} \times \vec{v} = \sin\left(\theta\right)\vec{n}
+$$
+
+since we don't want $\sin\left(\theta\right)$ to scale our vector $\vec{n}$, we normalize the cross product.
+
+$$
+\vec{w} = \frac{\vec{u} \times \vec{v}}{\| \vec{u} \times \vec{v} \|}
+$$
+
+which gives us our basis $\hat{z}$ axis. Now that we have our basis $\hat{x}$ and $\hat{z}$ axis, we have to reconstruct the $\hat{y}$ axis, which is simply
+
+$$
+\vec{v}' = \vec{w} \times \vec{u} = \frac{\left(\vec{u} \times \vec{v}\right) \times \vec{u}}{\| \vec{u} \times \vec{v} \|}
+$$
+
+We can use a property of the cross product to simply this expression a bit:
+
+$$
+\begin{aligned}
+\left(\vec{A} \times \vec{B} \right) \times \vec{C} &= \vec{B} \left( \vec{A} \bullet \vec{C} \right) - \vec{A} \left( \vec{B} \bullet \vec{C} \right) \\
+&= \vec{B} \langle \vec{A}, \vec{C} \rangle - \vec{A} \langle \vec{B}, \vec{C} \rangle
+\end{aligned}
+$$
+
+the second notation is for inner-product bracket notation enjoyers like me.
+
+$$
+\frac{ \left( \vec{u} \times \vec{v} \right) \times \vec{u} }{\| \vec{u} \times \vec{v} \|} = \frac{ \vec{v} \langle \vec{u}, \vec{u} \rangle - \vec{u} \langle \vec{v}, \vec{u}\rangle }{\| \vec{u} \times \vec{v} \|}
+$$
+
+so now we have:
+
+$$
+\begin{aligned}
+\hat{x} &= \vec{u} &
+\hat{y} &= \frac{ \vec{v} \langle \vec{u}, \vec{u} \rangle - \vec{u} \langle \vec{v}, \vec{u}\rangle }{\| \vec{u} \times \vec{v} \|} &
+\hat{z} &= \frac{ \vec{u} \times \vec{v} }{\| \vec{u} \times \vec{v} \|}
+\end{aligned}
+$$
+
+Let's do some analysis on the lengths to see if we can simplify a bit further.
+
+We define $\vec{u}$ as the normaliezed vector of $\vec{U}$, so we know its length will always be 1, and same goes for $\vec{v}$.
+
+$\vec{u} \times \vec{v}$ is the cross product between two normalized vectors, but those vectors aren't expected to be perpendicular to each other yet, so the $\sin\left(\theta\right)$ term will still affect scale here.
+
+$\left(\vec{u} \times \vec{v}\right) \times \vec{u}$ will carry the scale of $\vec{u} \times \vec{v}$ along with it. This vector is, by definition, guaranteed to be perpendicular to $\vec{u}$, meaning the $\sin\left(\theta\right)$ term between
+$\left(\vec{u} \times \vec{v}\right)$ and $\vec{u}$ will be equal to 1, since $\sin\left(90\degree\right) = 1$.
+
+This implies the magnitude of $\left(\vec{u} \times \vec{v}\right) \times \vec{u}$ will have the same magnitude as $\vec{u} \times \vec{v}$, meaning
+
+$$
+\| \vec{u} \times \vec{v} \| = \|(\vec{u} \times \vec{v}) \times \vec{u} \| = \| \vec{v} \langle \vec{u}, \vec{u} \rangle - \vec{u} \langle \vec{v}, \vec{u} \rangle \|
+$$
+
+We can use this property to simplify what needs to be calculated
+
+$$
+\begin{aligned}
+\hat{x} &= \frac{\vec{U}}{\|\vec{U}\|} &
+\hat{y} &= \frac{\vec{v} \langle \hat{x}, \hat{x} \rangle - \hat{x} \langle \vec{v}, \hat{x}\rangle}{\| \vec{v} \langle \hat{x}, \hat{x} \rangle - \hat{x} \langle \vec{v}, \hat{x} \rangle \|} &
+\hat{z} &= \hat{x} \times \hat{y}
+\end{aligned}
+$$
+
+Furthermore, the dot product of $\langle \hat{x}, \hat{x} \rangle$ is the square magnitude of the normalized vector $\hat{x}$, meaning this will equal 1 every time, therefore we may omit it.
+In the case of $\langle \vec{v}, \hat{x}\rangle$ however, we expect $\vec{v}$ to never be aligned with $\hat{x}$ since that would be a degenerate case, so we must keep it as is.
+This doesn't change the fact that we *normalize* the $\hat{y}$ vector when calculating it though, so scalar terms will cancel out after normalization. $\hat{y}$ is the only time $\vec{v}$ is
+used in computation, so normalizing $\vec{V}$ is insignificant here. We can separate the magnitude of $\vec{v}$ from the dot product $\langle \vec{v}, \hat{x} \rangle$ using the "scalar associative" property.
+
+$$
+\langle \vec{v}, \hat{x} \rangle = \langle \frac{\vec{V}}{\|\vec{V}\|}, \hat{x}\rangle = \frac{1}{\|\vec{V}\|} \langle \vec{V}, \hat{x} \rangle
+$$
+
+The fact that $\hat{y}$ is normalized after computation implies we can simply ignore the scalar term of $\vec{V}$, and use it as is.
+
+$$
+\begin{aligned}
+\hat{x} &= \frac{\vec{U}}{\| \vec{U} \|} &
+\hat{y} &= \frac{\vec{V} - \hat{x} \langle \vec{V}, \hat{x} \rangle}{\| \vec{V} - \hat{x} \langle \vec{V}, \hat{x} \rangle \|} &
+\hat{z} &= \hat{x} \times \hat{y}
+\end{aligned}
+$$
+
+Now we're at a pretty good point to implement this.
+
+```hlsl
+// Correct 3D cross product implementation, computing a x b
+// since Unity redefines the cross() function to fit their left-handed coordinate system.
+float3 cross3(float3 a, float3 b) {
+    return a.yzx * b.zxy - a.zxy * b.yzx;
+}
+
+float3x3 vectorsToBasis(float3 u, float3 v)
+{
+    float3 xh = normalize(u);
+    float3 yh = normalize(v - xh * dot(xh, v));
+    float3 zh = cross3(xh, yh);
+    return transpose(float3x3(xh, yh, zh));
+}
+```
+
+Expanding our analysis a bit, we're constructing a 3x3 matrix with all columns perpendicular to each other, making this matrix an *orthogonal* matrix, making it a member of $O(3)$.
+Since each column vector is of unit length as well, we graduate from *orthogonal* to *orthonormal*. With the determinant of this matrix always being 1 (not going to formally prove this here),
+this matrix is a member of the [*special orthogonal group*](https://en.wikipedia.org/wiki/Orthogonal_group) or $SO(3)$
+
+This means the inverse of the matrix is its transpose.
+
+```hlsl
+float3x3 vectorsToBasisInverse(float3 u, float3 v) {
+    return transpose(vectorsToBasis(u, v));
+}
+```
+
 
 ### Orthonormal Basis from 2D Axes
 
