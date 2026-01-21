@@ -458,7 +458,7 @@ value = clamp(value, 0.0, 1.0);
 in place of saturate. Conceptually, saturate can also be implemented with `min` and `max` functions as
 
 $$
-\operatorname{saturate}(x) = \min(1, \max(x, 0))
+\mathrm{saturate}(x) = \min(1, \max(x, 0))
 $$
 
 `sat` follows the same rules as min and max for things like NaN returning 0
