@@ -2,6 +2,40 @@
 
 Sometimes I have to decompile a shader or read through the compiled version of my hlsl bullshit. I hate having to remind myself every time wtf `round_z` means, so I figured its time to make a massive table of shader assembly contents... and well I guess write out a thesis of knowledge on how to read disassembled shader shit.
 
+# Table of Contents
+<!-- mtoc-start -->
+
+- [Shader Disassembly Reference](#shader-disassembly-reference)
+- [Table of Contents](#table-of-contents)
+	- [Prerequisite](#prerequisite)
+		- [CPU vs GPU](#cpu-vs-gpu)
+		- [Architecture](#architecture)
+	- [Instruction Layout](#instruction-layout)
+		- [Instruction Masking](#instruction-masking)
+		- [Component Swizzling](#component-swizzling)
+		- [Read/Write Ordering](#readwrite-ordering)
+		- [Wtf is `l()`?](#wtf-is-l)
+		- [Decoding DirectX-ByteCode (DXBC)](#decoding-directx-bytecode-dxbc)
+	- [Instruction Modifiers](#instruction-modifiers)
+		- [Absolute](#absolute)
+		- [Negate](#negate)
+		- [Saturate](#saturate)
+- [Assembly Table](#assembly-table)
+	- [ADD](#add)
+		- [Signature](#signature)
+		- [Remarks](#remarks)
+	- [AND](#and)
+		- [Signature](#signature-1)
+		- [Remarks](#remarks-1)
+	- [BREAK](#break)
+		- [Signature](#signature-2)
+		- [Remarks](#remarks-2)
+	- [BREAKC](#breakc)
+		- [Signature](#signature-3)
+		- [Remarks](#remarks-3)
+
+<!-- mtoc-end -->
+
 ## Prerequisite
 
 ### CPU vs GPU
@@ -486,3 +520,164 @@ can be generated from
 ```hlsl
 return saturate(i.uv.x / i.uv.y) + 4.0;
 ```
+
+
+# Assembly Table
+
+## ADD
+
+Sums the components of two floating point vectors together.
+
+- [Documentation](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/add--sm4---asm-)
+- Disassembly id: `add`
+- Opcode type: `D3D10_SB_OPCODE_TYPE::D3D10_SB_OPCODE_ADD`
+- Opcode value: `0`
+- Works with float and double types
+
+### Signature
+
+Disassembly (brief): `add dst.xyzw, src0.xyzw, src1.xyzw`
+Disassembly (full): `add[_sat] dst[.mask], [-]src0[_abs][.swizzle], [-]src1[_abs][.swizzle]`
+Shader: `dst = src0 + src1;`
+
+
+### Remarks
+
+- `x = 0`
+	- `add x, -x,  x` : `x = -x + x = x - x`
+	- `add x,  x, -x` : `x = x + -x = x - x`
+- `x`
+	- `add x, x, l(0.0)` : `x = x + 0.0`
+	- `add x, l(0.0), x` : `x = 0.0 + x`
+- `|x|`
+	- `add x, |x|, l(0.0)` : `x = |x| + 0.0 = abs(x)`
+	- `add x, l(0.0), |x|` : `x = 0.0 + |x| = abs(x)`
+- `-x` or `x *= -1`
+	- `add x, -x, l(0.0)` : `x = -x + 0.0 = -x`
+	- `add x, l(0.0), -x` : `x = 0.0 + -x = -x`
+- `-|x|`
+	- `add x, -|x|, l(0.0)` : `x = -|x| + 0.0 = -abs(x)`
+	- `add x, l(0.0), -|x|` : `x = 0.0 + -|x| = -abs(x)`
+- `x++`
+	- `add x, x, l(1.0)` : `x = x + 1.0`
+	- `add x, l(1.0), x` : `x = 1.0 + x`
+- `x--`
+	- `add x, x, l(-1.0)` : `x = x + -1.0 = x - 1`
+	- `add x, l(-1.0), x` : `x = -1.0 + x = x - 1`
+- `x += y`
+	- `add x, x, y` : `x = x + y`
+	- `add x, y, x` : `x = y + x`
+- `x -= y`
+	- `add x, x, -y` : `x = x + -y`
+- `x *= 2`
+	- `add x,  x,  x` : `x = x + x`
+- `x = 2 * y`
+	- `add x, y, y` : `x = y + y`
+- `x *= -2`
+	- `add x, -x, -x` : `x = -x + -x`
+- `x = -2 * y`
+	- `add x, -y, -y` : `x = -y + -y`
+- `x = y - x`
+	- `add x, -x, y` : `x = -x + y = y - x`
+- `max(2x, 0)`
+	- `add x, |x|, x` : `x = |x| + x = abs(x) + x`
+- `max(-2x, 0)`
+	- `add x, |x|, -x` : `x = |x| + -x = abs(x) - x`
+- `min(2x, 0)`
+	- `add x, x, -|x|` : `x = x + -|x| = x - abs(x)`
+- `min(-2x, 0)`
+	- `add x, -x, -|x|` : `x = -x + -|x| = -x - abs(x)`
+	- `add x, -|x|, -x` : `x = -|x| + -x = -abs(x) - x`
+
+
+## AND
+
+Computes the bitwise AND between the components of two integer vectors.
+
+- [Documentation](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/and--sm4---asm-)
+- Disassembly id: `and`
+- Opcode type: `D3D10_SB_OPCODE_TYPE::D3D10_SB_OPCODE_AND`
+- Opcode value: `1`
+- Works with signed/unsigned integer types
+
+### Signature
+
+Disassembly (brief): `and dst.xyzw, src0.xyzw, src1.xyzw`
+Disassembly (full): `and dst[.mask], src0[.swizzle], src1[.swizzle]`
+Shader: `dst = src0 & src1;`
+
+### Remarks
+
+- `x = 0`
+	- `and x, x, l(0)` : `x = x & 0`
+	- `and x, l(0), x` : `x = 0 & x`
+- `x`
+	- `and x, x, x` : `x = x & x = x`
+	- `and x, x, l(~0)` : `x = x & (~0) = x`
+- `x & 1` "x is odd"
+	- `and x, x, l(1)` : `x = x & 1`
+	- `and x, l(1), x` : `x = 1 & x`
+- `x % (2^n)` "Wrap around after n-th power of two"
+	- `and x, x, l( (2^n)-1 )` : `x = x & [1|3|7|15|31|...]`
+	- `and x, l( (2^n)-1 ), x` : `x = [1|3|7|15|31|...] & x`
+- `(x / (2^n)) * 2^n` "Round down to n-th power of two"
+	- `and x, x, l(~((2^n)-1))` : `x = x & ~[1|3|7|15|31|...]`
+	- `and x, l(~((2^n)-1)), x` : `x = ~[1|3|7|15|31|...] & x`
+- `x = y`
+	- `and x, l(~0), y` : `x = (~0) & y = y`
+	- `and x, y, l(~0)` : `x = y & (~0) = y`
+
+## BREAK
+
+Leaves a switch case / breaks out of a loop, moving to the instruction after the next `endloop` or `endswitch`.
+
+- [Documentation](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/break--sm4---asm-)
+- Disassembly id: `break`
+- Opcode type: `D3D10_SB_OPCODE_TYPE::D3D10_SB_OPCODE_BREAK`
+- Opcode value: `2`
+- No arguments taken.
+
+### Signature
+
+Disassembly: `break`
+Shader: `break;`
+
+### Remarks
+Must appear within a `loop`/`endloop` or `switch`/`endswitch`
+
+## BREAKC
+
+Conditionally leaves a switch case / breaks out of a loop, moving to the instruction after the next `endloop` or `endswitch`.
+
+- [Documentation](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/breakc--sm4---asm-)
+- Disassembly id: `breakc`
+- Opcode type: `D3D10_SB_OPCODE_TYPE::D3D10_SB_OPCODE_BREAKC`
+- Opcode value: `3`
+- Works with technically any register type, but favoured towards signed/unsigned integers.
+
+### Signature
+
+Disassembly (brief): `breakc[_z|_nz] src0.[cmp]`
+Disassembly (full): break if all zeros: `breakc_z` break if non-zero: `breakc_nz`
+Shader:
+
+```hlsl
+// breakc_z
+if(!src0.cmp)
+	break;
+
+// breakc_nz
+if(src0.cmp)
+	break;
+```
+
+### Remarks
+
+Must appear within a `loop`/`endloop` or `switch`/`endswitch`
+
+If any bit within the memory of `src0.cmp` is set, `breakc_nz` will perform a break.
+
+If all bits within the memory of `src0.cmp` are zeros, `breakc_z` will perform a break.
+
+Only one component may be used from `src0`
+
