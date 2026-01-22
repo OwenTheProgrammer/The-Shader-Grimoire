@@ -11,38 +11,41 @@ I will try to keep things somewhat orderly, for all of tonight, and none of the 
 # Table of Contents
 <!-- mtoc-start -->
 
-- [Shader Shtuff](#shader-shtuff)
-  - [Reconstruct Normals from Depth Texture](#reconstruct-normals-from-depth-texture)
-  - [Basis View-plane Vectors from ScreenPos](#basis-view-plane-vectors-from-screenpos)
-  - [Orthonormal Basis from 3D vectors](#orthonormal-basis-from-3d-vectors)
-  - [Orthonormal Basis from 2D Axes](#orthonormal-basis-from-2d-axes)
-  - [Vertical and Horizontal FOV from Inverse Projection](#vertical-and-horizontal-fov-from-inverse-projection)
-  - [RGBA Channel Interpolation](#rgba-channel-interpolation)
-  - [Inverse RGBA Channel Interpolation](#inverse-rgba-channel-interpolation)
-  - [Worldspace scale from the Model Matrix](#worldspace-scale-from-the-model-matrix)
-  - [Model Origin in View Space](#model-origin-in-view-space)
-  - [Distance from Camera to Model Origin](#distance-from-camera-to-model-origin)
-  - [Parameterized Curvy Line](#parameterized-curvy-line)
-  - [Billboard Matrix Construction](#billboard-matrix-construction)
-  - [Look-At Matrix (Y)](#look-at-matrix-y)
-  - [2x2 Matrix Inverse](#2x2-matrix-inverse)
-  - [Hue Shift via Chrominance Rotation](#hue-shift-via-chrominance-rotation)
-  - [Old Bit Noise](#old-bit-noise)
-  - [Calculate Shortest Angle Delta](#calculate-shortest-angle-delta)
-- [Approximations](#approximations)
-  - [`1/3` Order Chebyshev Function `cos(acos(x)/3)`](#13-order-chebyshev-function-cosacosx3)
-  - [Arc-cosine `acos(x)`](#arc-cosine-acosx)
-  - [Arc-cosine `acos` again](#arc-cosine-acos-again)
-  - [Atan2 Approximation](#atan2-approximation)
-  - [Error function approximation](#error-function-approximation)
-  - [Blackbody Kelvin to 2deg sRGB](#blackbody-kelvin-to-2deg-srgb)
-- [Anti-Aliasing](#anti-aliasing)
-  - [A Single Quad](#a-single-quad)
-  - [Terraced Steps](#terraced-steps)
-- [Quest Screen-Space Stuff](#quest-screen-space-stuff)
-- [Hilarious / Cursed things](#hilarious--cursed-things)
-  - [Screen aspect ratio, from the Perspective matrix](#screen-aspect-ratio-from-the-perspective-matrix)
-  - [I need the letter A!](#i-need-the-letter-a)
+- [The Dumping Grounds](#the-dumping-grounds)
+- [Table of Contents](#table-of-contents)
+    - [Shader Shtuff](#shader-shtuff)
+        - [Reconstruct Normals from Depth Texture](#reconstruct-normals-from-depth-texture)
+        - [Basis View-plane Vectors from ScreenPos](#basis-view-plane-vectors-from-screenpos)
+        - [Orthonormal Basis from 3D vectors](#orthonormal-basis-from-3d-vectors)
+        - [Orthonormal Basis from 2D Axes](#orthonormal-basis-from-2d-axes)
+        - [Vertical and Horizontal FOV from Inverse Projection](#vertical-and-horizontal-fov-from-inverse-projection)
+        - [RGBA Channel Interpolation](#rgba-channel-interpolation)
+        - [Inverse RGBA Channel Interpolation](#inverse-rgba-channel-interpolation)
+        - [RGB888 to RGB565](#rgb888-to-rgb565)
+        - [Worldspace scale from the Model Matrix](#worldspace-scale-from-the-model-matrix)
+        - [Model Origin in View Space](#model-origin-in-view-space)
+        - [Distance from Camera to Model Origin](#distance-from-camera-to-model-origin)
+        - [Parameterized Curvy Line](#parameterized-curvy-line)
+        - [Billboard Matrix Construction](#billboard-matrix-construction)
+        - [Look-At Matrix (Y)](#look-at-matrix-y)
+        - [2x2 Matrix Inverse](#2x2-matrix-inverse)
+        - [Hue Shift via Chrominance Rotation](#hue-shift-via-chrominance-rotation)
+        - [Old Bit Noise](#old-bit-noise)
+        - [Calculate Shortest Angle Delta](#calculate-shortest-angle-delta)
+    - [Approximations](#approximations)
+        - [`1/3` Order Chebyshev Function `cos(acos(x)/3)`](#13-order-chebyshev-function-cosacosx3)
+        - [Arc-cosine `acos(x)`](#arc-cosine-acosx)
+        - [Arc-cosine `acos` again](#arc-cosine-acos-again)
+        - [Atan2 Approximation](#atan2-approximation)
+        - [Error function approximation](#error-function-approximation)
+        - [Blackbody Kelvin to 2deg sRGB](#blackbody-kelvin-to-2deg-srgb)
+    - [Anti-Aliasing](#anti-aliasing)
+        - [A Single Quad](#a-single-quad)
+        - [Terraced Steps](#terraced-steps)
+    - [Quest Screen-Space Stuff](#quest-screen-space-stuff)
+    - [Hilarious / Cursed things](#hilarious--cursed-things)
+        - [Screen aspect ratio, from the Perspective matrix](#screen-aspect-ratio-from-the-perspective-matrix)
+        - [I need the letter A!](#i-need-the-letter-a)
 
 <!-- mtoc-end -->
 
@@ -524,6 +527,28 @@ float inverseRGBAChannelWeights(float4 weights)
 float inverseRGBAChannelWeights(float4 weights)
 {
     return (3 * weights.a) / (3 * weights.a + 2 * weights.b);
+}
+```
+
+### RGB888 to RGB565
+
+I computed the conversion between rgb565 and rgb888 through brute-force searching which didnt take all that long. Every possible state a colour could be in will resolve perfectly to the same result you'd get if you converted to doubles and rounded. Both conversions become two integer instructions `imad, ushr`
+
+```hlsl
+uint3 rgb888_to_rgb565(uint3 color)
+{
+    uint4 K = uint4(0x0F9, 0x1FA, 0x3F6, 0x3F2);
+    uint3 rgb565 = (color * K.xyx + K.zwz) >> 11;
+    return rgb565;
+}
+```
+
+```hlsl
+uint3 rgb565_to_rgb888(uint3 color)
+{
+    uint4 K = uint4(0x20F, 0x103, 0x017, 0x021);
+    uint3 rgb888 = (color * K.xyx + K.zwz) >> 6;
+    return rgb888;
 }
 ```
 
