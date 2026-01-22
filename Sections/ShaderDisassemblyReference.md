@@ -20,6 +20,24 @@ Sometimes I have to decompile a shader or read through the compiled version of m
 		- [Absolute](#absolute)
 		- [Negate](#negate)
 		- [Saturate](#saturate)
+- [Pattern Recognition](#pattern-recognition)
+	- [`mul l(highly suspicious constant)` -\> `constant division`](#mul-lhighly-suspicious-constant---constant-division)
+	- [Many texture samples in the same general area](#many-texture-samples-in-the-same-general-area)
+	- [`mul, mad, mad, add` -\> `mul(float4x4, float4(xyz, 1))`](#mul-mad-mad-add---mulfloat4x4-float4xyz-1)
+	- [`mul, mad, mad, mad` -\> `mul(float4x4, float4(xyzw))`](#mul-mad-mad-mad---mulfloat4x4-float4xyzw)
+	- [`log, mul, exp` -\> `pow()`](#log-mul-exp---pow)
+	- [`mul, 1.442695, exp` -\> `exp()`](#mul-1442695-exp---exp)
+		- [Finding the base of an exponent](#finding-the-base-of-an-exponent)
+	- [`log, mul, 0.693147` -\> `log()`](#log-mul-0693147---log)
+	- [`rsq, div 1/x` -\> `sqrt(x)`](#rsq-div-1x---sqrtx)
+	- [`log, mul 0.333333, exp` -\> `cbrt(x)`](#log-mul-0333333-exp---cbrtx)
+	- [`dp#, .xyzw, sqrt` -\> `length()`](#dp-xyzw-sqrt---length)
+	- [`dp#, rsq, mul` -\> `normalize()`](#dp-rsq-mul---normalize)
+	- [`max(..., 0.0)` or `min(..., 1.0)` -\> `saturate()`](#max-00-or-min-10---saturate)
+	- [`lt, lt, iadd, itof` -\> `sign()`](#lt-lt-iadd-itof---sign)
+	- [`dp3 0.299, 0.587, 0.114` -\> RGB to Brightness](#dp3-0299-0587-0114---rgb-to-brightness)
+	- [`mad 0.305306 0.682171, mad 0.012523, mul` -\> `GammaToLinearSpace()`](#mad-0305306-0682171-mad-0012523-mul---gammatolinearspace)
+	- [`mad 2.51 .03, mul, mad 2.43 .59, mad .14, div_sat` -\> `ACESFilm`](#mad-251-03-mul-mad-243-59-mad-14-div_sat---acesfilm)
 - [Assembly Table](#assembly-table)
 	- [ADD](#add)
 		- [Signature](#signature)
@@ -520,6 +538,369 @@ can be generated from
 ```hlsl
 return saturate(i.uv.x / i.uv.y) + 4.0;
 ```
+
+# Pattern Recognition
+
+There are some assembly patterns you start to pick up on when you stare at your screen for long enough. Some are simple to find, some are stupid hard to piece together because its been optimized into another operation somewhere else.
+
+## `mul l(highly suspicious constant)` -> `constant division`
+
+You ever just feel like a number is something more? no? just me? aww..
+
+well, if you have a literal thats less than 1, and it feels kinda funny, try
+- computing 1 / that value
+- searching "{that value} as a fraction"
+
+there's a good chance it has some stupid value like `13137/50000` in which I would just ignore it, but if its like 1/125, it might just mean something.
+
+```hlsl
+//mul r0.xyzw, r0.xyzw, l(0.062500, 0.062500, 0.062500, 0.062500)
+```
+
+$$
+\frac{1}{0.0625} = 16
+$$
+
+```hlsl
+//mul r0.xyzw, r0.xyzw, l(0.062500, 0.062500, 0.062500, 0.062500)
+
+r0.xyzw /= 16.0;
+```
+
+## Many texture samples in the same general area
+
+If you see more texture samples on your screen than like 4-ish, theres a good chance somethings up.
+
+There was most likely an unrolled loop somewhere, but in general either some convolution is right in front of you, [like gaussian blurs 'n such.](https://en.wikipedia.org/wiki/Kernel_(image_processing)#Details)
+
+
+## `mul, mad, mad, add` -> `mul(float4x4, float4(xyz, 1))`
+
+```hlsl
+//mul r0.xyzw, v0.yyyy, cb0[1].xyzw
+//mad r0.xyzw, cb0[0].xyzw, v0.xxxx, r0.xyzw
+//mad r0.xyzw, cb0[2].xyzw, v0.zzzz, r0.xyzw
+//add r0.xyzw, r0.xyzw, cb0[3].xyzw
+```
+
+## `mul, mad, mad, mad` -> `mul(float4x4, float4(xyzw))`
+
+```hlsl
+// mul r1.xyzw, r0.yyyy, cb1[18].xyzw
+// mad r1.xyzw, cb1[17].xyzw, r0.xxxx, r1.xyzw
+// mad r1.xyzw, cb1[19].xyzw, r0.zzzz, r1.xyzw
+// mad o1.xyzw, cb1[20].xyzw, r0.wwww, r1.xyzw
+```
+
+## `log, mul, exp` -> `pow()`
+
+First of all, the shader compiler will use multiplication composition to get small powers of a variable, like so.
+
+```hlsl
+// mul o0.x, v1.x, v1.x
+return pow(x, 2);
+
+// mul r0.x, v1.x, v1.x
+// mul o0.x, r0.x, v1.x
+return pow(x, 3);
+
+// mul r0.x, v1.x, v1.x
+// mul o0.x, r0.x, r0.x
+return pow(x, 4);
+
+// mul r0.x, v1.x, v1.x
+// mul r0.x, r0.x, r0.x
+// mul o0.x, r0.x, v1.x
+return pow(x, 5);
+...
+```
+
+But as im sure you guessed, it's not going to unroll `pow(x, 400)` as
+```hlsl
+// 400: 256 + 128 + 16
+float v = x;    // x
+v = v * v;      // x^2
+v = v * v;      // x^4
+v = v * v;      // x^8
+v = v * v;      // x^16
+float v16 = v;
+v = v * v;      // x^32
+v = v * v;      // x^64
+v = v * v;      // x^128
+float v128 = v;
+v = v * v;      // x^256
+v = v * v128;   // x^384
+v = v * v16;    // x^400
+```
+which would be funny as hell, what about fractional powers? what about dynamic powers?
+
+The shader compiler does this wacko shtuff:
+
+$$
+\Large
+\begin{aligned}
+	x &= 2^{\log_2\left(x\right)} \\
+	\left(x\right)^n &= \left(2^{\log_2\left(x\right)}\right)^n \\
+	x^n &= 2^{n\log_2\left(x\right)}
+\end{aligned}
+$$
+
+Resulting in this expansion:
+
+```hlsl
+//log r0.x, [input]
+//mul r0.x, r0.x, [power]
+//exp r0.x, r0.x
+
+pow(input, power);
+```
+
+> [!NOTE]
+> `log()` and `exp()` functions are base-e in HLSL, but the shader assembly has `log` and `exp` as base-2 functions.. just to mess with ya.
+> the `log` instruction maps to the `log2()` intrinsic
+> the `exp` instruction maps to the `exp2()` intrinsic
+
+## `mul, 1.442695, exp` -> `exp()`
+
+Speaking of actually, `exp()` is done using more logarithm rules:
+
+$$
+\Large
+\begin{aligned}
+	\left(a^b\right)^c &= a^{bc} \\
+	b^{\log_b\left(x\right)} &= x \\
+	e^x &= \left(2^{\log_2\left(e\right)}\right)^x
+		 = 2^{x\log_2\left(e\right)} \\
+	\log_2\left(e\right) &\approx 1.442695
+\end{aligned}
+$$
+
+```hlsl
+//mul r0.x, [input], l(1.442695)
+//exp r0.x, r0.x
+
+exp(input);
+```
+
+This is where things are rough to work out 99% of the time though.. since even the smallest of modifications result in a different result
+
+```hlsl
+//mul r0.x, [input], l(7.213475)
+//exp r0.x, r0.x
+
+exp(input * 5.0);
+```
+
+But of course, you can divide the literal by $\log_2\left(e\right)$ to see what the multiplier would be to get `exp()` to work.
+
+$$
+	\frac{7.213475}{\log_2\left(e\right)} \approx 4.99999985829
+$$
+
+Same goes for other exponents by the way!
+
+### Finding the base of an exponent
+
+Alright let's say you have
+
+```hlsl
+mul r0.x, v1.x, l(1.584962)
+exp r0.x, r0.x
+```
+
+and we want to calculate the base of the exponentiation `pow(base, v1.x)`, we can simply raise the literal to the power of two.
+
+$$
+	2^{1.584962} \approx 2.99999895878
+$$
+
+If you like the number enough to marry it, you can just use that
+
+```hlsl
+//return pow(2.99999, v1.x); just kidding lol
+return pow(3.0, v1.x);
+```
+
+Do keep in mind as well, the base may be a power of two as well. Take for instance
+
+```hlsl
+	add r0.x, v1.x, v1.x
+	exp r0.x, r0.x
+```
+
+Which we can interpret as
+
+```hlsl
+	mul r0.x, v1.x, l(2.000000)
+	exp r0.x, r0.x
+```
+
+raising two to the `2.000000`'th power results in.. well.. $2^2$.. which is 4.
+```hlsl
+return pow(4, v1.x);
+```
+
+## `log, mul, 0.693147` -> `log()`
+
+Yet another optimization trick
+
+$$
+\begin{aligned}
+	\ln\left(x\right) &= \ln\left(2\right) \log_2\left(x\right) \\
+	\ln\left(2\right) &\approx 0.693147
+\end{aligned}
+$$
+
+```hlsl
+//log r0.x, v1.x
+//mul r0.x, r0.x, l(0.693147)
+
+return log(v1.x);
+```
+
+Which is yet another point where the multiplier may not be perfect to read off..
+
+```hlsl
+//log r0.x, v1.x
+//mul r0.x, r0.x, l(2.772589)
+
+// 2.772589 / 0.693147 = 4.0000014427
+
+return log(v1.x) * 4;
+```
+
+## `rsq, div 1/x` -> `sqrt(x)`
+
+```hlsl
+//rsq r0.x, v1.x
+//div r0.x, l(1.000000), r0.x
+
+return sqrt(v1.x);
+```
+
+## `log, mul 0.333333, exp` -> `cbrt(x)`
+
+I outline this one because the `cbrt(x)` function doesnt exist..
+
+```hlsl
+#define cbrt(x) pow(x, 1.0/3.0)
+
+//log r0.x, v1.x
+//mul r0.x, r0.x, l(0.333333)
+//exp r0.x, r0.x
+
+return cbrt(v1.x)
+```
+
+## `dp#, .xyzw, sqrt` -> `length()`
+
+Computing the length of vectors happen a lot, thankfully the instructions needed to compute the euclidean length aren't really seperable, so they're quite easy to spot.
+
+Anytime you see the dot product for one variable, with swizzles that look like this:
+- `dp2` = `.xyxx`
+- `dp3` = `.xyzx`
+- `dp4` = `.xyzw`
+
+Followed by a square root, then that computes the length.
+
+```hlsl
+// dp2 r0.x, v1.xyxx, v1.xyxx
+// sqrt r0.x, r0.x
+
+return length(some float2);
+
+// dp3 r0.x, v1.xyzx, v1.xyzx
+// sqrt r0.x, r0.x
+
+return length(some float3);
+
+// dp4 r0.x, v1.xyzw, v1.xyzw
+// sqrt r0.x, r0.x
+
+return length(some float4);
+
+// dp3 r0.x, v1.xyzx, v2.xyzx
+// sqrt r0.x, r0.x
+
+// NOT the length, since its v1 and v2:
+return sqrt(dot(v1.xyz, v2.xyz));
+
+// dp4 r0.x, v1.xyxy, v1.xyxy
+// sqrt r0.x, r0.x
+
+// NOT the length since the 4 component dot product didnt include z or w
+return sqrt(dot(v1.xyxy, v1.xyxy));
+```
+
+## `dp#, rsq, mul` -> `normalize()`
+
+```hlsl
+// dp3 r0.x, v1.xyzx, v1.xyzx
+// rsq r0.x, r0.x
+// mul o0.xyz, v1.xyzx, r0.x
+
+return normalize(v1.xyz);
+```
+
+> [!NOTE]
+> normalize(x) is definitionally equal to x / length(x), so identifying normalize can also be found through:
+> dp#, sqrt, div
+
+## `max(..., 0.0)` or `min(..., 1.0)` -> `saturate()`
+
+Sometimes the shader compiler understands a given expression stays within the lower or upper bound of saturate. This results in min / max being used in place of saturate.
+
+```hlsl
+// x*x can't be less than zero, so we only need to clamp x*x to 1.
+
+// mul r0.x, v1.x, v1.x
+// min r0.x, r0.x, l(1.000000)
+
+return saturate(x * x);
+```
+
+## `lt, lt, iadd, itof` -> `sign()`
+
+```hlsl
+// lt r0.x, l(0.0), [input]
+// lt r0.y, [input], l(0.0)
+// iadd r0.x, -r0.x, r0.y
+// itof r0.x, r0.x
+
+return sign(input)
+```
+
+## `dp3 0.299, 0.587, 0.114` -> RGB to Brightness
+
+Sometimes you'll see it like this:
+```hlsl
+// dp3 r0.x, [color].xyzx l(0.299000, 0.587000, 0.114000, 0.000000)
+```
+
+and sometimes you'll get a truncated version:
+```hlsl
+// dp3 r0.x, [color].xyzx l(0.300000, 0.590000, 0.110000, 0.000000)
+```
+
+but they both represent the Y' component of Y'UV, which is often used for converting an RGB colour into its brightness component.
+
+
+## `mad 0.305306 0.682171, mad 0.012523, mul` -> `GammaToLinearSpace()`
+
+This one's fairly Unity specific, but you may see it come up from time to time.
+
+```hlsl
+// mad r0.xyz, [color].xyzx, l(0.305306, 0.305306, 0.305306, 0.000000), l(0.682171, 0.682171, 0.682171, 0.000000)
+// mad r0.xyz, [color].xyzx, r0.xyzx, l(0.012523, 0.012523, 0.012523, 0.000000)
+// mul r0.xyz, r0.xyzx, [color].xyzx
+
+return GammaToLinearSpace(color);
+```
+
+## `mad 2.51 .03, mul, mad 2.43 .59, mad .14, div_sat` -> `ACESFilm`
+
+TODO: this section lol there are so many colour transforms
+to the reader though, you should snoop around colour space matrices to see if your assembly is genuinely just a R709 transform or whatever.
 
 
 # Assembly Table
