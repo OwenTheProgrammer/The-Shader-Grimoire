@@ -152,97 +152,95 @@ As shown in this image, just with the vectors at the origin instead.
 If you have two 3D vectors, you can construct a 3D xyz basis system from them. Technically this is an extended version of the [Gram-Schmidt process](https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process).
 
 Let's say you have a 3D vector $\vec{U}$ and another vector $\vec{V}$ which is non-collinear with the other one (they aren't directly in-line with each other)
-we can normalize them to remove scale, let $\vec{u} = \vec{U} / \|\vec{U}\|$ and $\vec{v} = \vec{V} / \|\vec{V}\|$ where $\|\vec{x}\|$ represents the magnitude or "length" of $\vec{x}$.
+we can normalize them to remove scale, let $\vec{u} = \vec{U} \smash{/} \textbardbl \vec{U} \textbardbl$ and $\vec{v} = \vec{V} \smash{/} \textbardbl \vec{V} \textbardbl$ where $\textbardbl \vec{x} \textbardbl$ represents the magnitude or "length" of $\vec{x}$.
 
 If we treat $\vec{u}$ as the local $\hat{x}$ axis, and $\vec{v}$ as a rotated version of the $\hat{y}$ axis, we can construct a vector thats *orthogonal* (perpendicular) to both vectors, using the cross product.
 
 $$
-\vec{a} \times \vec{b} = \|\vec{a}\| \|\vec{b} \| \sin\left(\theta\right) \vec{n}
+\vec{a} \times \vec{b} = \textbardbl \vec{a} \textbardbl \textbardbl \vec{b} \textbardbl \kern{2pt} \sin(\theta) \kern{2pt} \vec{n}
 $$
 
 where $\vec{n}$ is a vector perpendicular to both $\vec{u}$ and $\vec{v}$, and $\theta$ is the angle between the two vectors.
 
 $$
-\vec{u} \times \vec{v} = \sin\left(\theta\right)\vec{n}
+\vec{u} \times \vec{v} = \sin (\theta) \kern{2pt} \vec{n}
 $$
 
-since we don't want $\sin\left(\theta\right)$ to scale our vector $\vec{n}$, we normalize the cross product.
+since we don't want $\sin(\theta)$ to scale our vector $\vec{n}$, we normalize the cross product.
 
 $$
-\vec{w} = \frac{\vec{u} \times \vec{v}}{\| \vec{u} \times \vec{v} \|}
+\vec{w} = \frac{\vec{u} \times \vec{v}}{\textbardbl \vec{u} \times \vec{v} \textbardbl}
 $$
 
 which gives us our basis $\hat{z}$ axis. Now that we have our basis $\hat{x}$ and $\hat{z}$ axis, we have to reconstruct the $\hat{y}$ axis, which is simply
 
 $$
-\vec{v}' = \vec{w} \times \vec{u} = \frac{\left(\vec{u} \times \vec{v}\right) \times \vec{u}}{\| \vec{u} \times \vec{v} \|}
+\vec{v}' = \vec{w} \times \vec{u} = \frac{( \vec{u} \times \vec{v} ) \times \vec{u}}{\textbardbl \vec{u} \times \vec{v} \textbardbl}
 $$
 
 We can use a property of the cross product to simply this expression a bit:
 
 $$
 \begin{aligned}
-\left(\vec{A} \times \vec{B} \right) \times \vec{C} &= \vec{B} \left( \vec{A} \bullet \vec{C} \right) - \vec{A} \left( \vec{B} \bullet \vec{C} \right) \\
-&= \vec{B} \langle \vec{A}, \vec{C} \rangle - \vec{A} \langle \vec{B}, \vec{C} \rangle
+( \vec{A} \times \vec{B} ) \times \vec{C} &= \vec{B} ( \vec{A} \bullet \vec{C} ) - \vec{A} ( \vec{B} \bullet \vec{C} ) \\
+&= \vec{B} \braket{ \vec{A}, \vec{C} } - \vec{A} \braket{ \vec{B}, \vec{C} }
 \end{aligned}
 $$
 
 the second notation is for inner-product bracket notation enjoyers like me.
 
 $$
-\frac{ \left( \vec{u} \times \vec{v} \right) \times \vec{u} }{\| \vec{u} \times \vec{v} \|} = \frac{ \vec{v} \langle \vec{u}, \vec{u} \rangle - \vec{u} \langle \vec{v}, \vec{u}\rangle }{\| \vec{u} \times \vec{v} \|}
+\frac{ ( \vec{u} \times \vec{v} ) \times \vec{u} }{\textbardbl \vec{u} \times \vec{v} \textbardbl} = \frac{ \vec{v} \braket{ \vec{u}, \vec{u} } - \vec{u} \braket{ \vec{v}, \vec{u} } }{\textbardbl \vec{u} \times \vec{v} \textbardbl}
 $$
 
 so now we have:
 
 $$
-\begin{aligned}
-\hat{x} &= \vec{u} &
-\hat{y} &= \frac{ \vec{v} \langle \vec{u}, \vec{u} \rangle - \vec{u} \langle \vec{v}, \vec{u}\rangle }{\| \vec{u} \times \vec{v} \|} &
-\hat{z} &= \frac{ \vec{u} \times \vec{v} }{\| \vec{u} \times \vec{v} \|}
-\end{aligned}
+\hat{x} = \vec{u} \kern{2em}
+\hat{y} = \frac{ \vec{v} \braket{ \vec{u}, \vec{u} } - \vec{u} \braket{ \vec{v}, \vec{u} } }{\textbardbl \vec{u} \times \vec{v} \textbardbl} \kern{2em}
+\hat{z} = \frac{ \vec{u} \times \vec{v} }{\textbardbl \vec{u} \times \vec{v} \textbardbl}
 $$
 
 Let's do some analysis on the lengths to see if we can simplify a bit further.
 
 We define $\vec{u}$ as the normaliezed vector of $\vec{U}$, so we know its length will always be 1, and same goes for $\vec{v}$.
 
-$\vec{u} \times \vec{v}$ is the cross product between two normalized vectors, but those vectors aren't expected to be perpendicular to each other yet, so the $\sin\left(\theta\right)$ term will still affect scale here.
+$\vec{u} \times \vec{v}$ is the cross product between two normalized vectors, but those vectors aren't expected to be perpendicular to each other yet, so the $\sin(\theta)$ term will still affect scale here.
 
-$\left(\vec{u} \times \vec{v}\right) \times \vec{u}$ will carry the scale of $\vec{u} \times \vec{v}$ along with it. This vector is, by definition, guaranteed to be perpendicular to $\vec{u}$, meaning the $\sin\left(\theta\right)$ term between
-$\left(\vec{u} \times \vec{v}\right)$ and $\vec{u}$ will be equal to 1, since $\sin\left(90\degree\right) = 1$.
+$(\vec{u} \times \vec{v}) \times \vec{u}$ will carry the scale of $\vec{u} \times \vec{v}$ along with it. This vector is, by definition, guaranteed to be perpendicular to $\vec{u}$, meaning the $\sin(\theta)$ term between
+$(\vec{u} \times \vec{v})$ and $\vec{u}$ will be equal to 1, since $\sin(90\degree) = 1$.
 
-This implies the magnitude of $\left(\vec{u} \times \vec{v}\right) \times \vec{u}$ will have the same magnitude as $\vec{u} \times \vec{v}$, meaning
+This implies the magnitude of $(\vec{u} \times \vec{v}) \times \vec{u}$ will have the same magnitude as $\vec{u} \times \vec{v}$, meaning
 
 $$
-\| \vec{u} \times \vec{v} \| = \|(\vec{u} \times \vec{v}) \times \vec{u} \| = \| \vec{v} \langle \vec{u}, \vec{u} \rangle - \vec{u} \langle \vec{v}, \vec{u} \rangle \|
+\textbardbl \vec{u} \times \vec{v} \textbardbl 
+= \textbardbl (\vec{u} \times \vec{v}) \times \vec{u} \textbardbl 
+= \textbardbl \vec{v} \braket{ \vec{u}, \vec{u} } - \vec{u} \braket{ \vec{v}, \vec{u} } \textbardbl
 $$
 
 We can use this property to simplify what needs to be calculated
 
 $$
-\begin{aligned}
-\hat{x} &= \frac{\vec{U}}{\|\vec{U}\|} &
-\hat{y} &= \frac{\vec{v} \langle \hat{x}, \hat{x} \rangle - \hat{x} \langle \vec{v}, \hat{x}\rangle}{\| \vec{v} \langle \hat{x}, \hat{x} \rangle - \hat{x} \langle \vec{v}, \hat{x} \rangle \|} &
-\hat{z} &= \hat{x} \times \hat{y}
-\end{aligned}
+\hat{x} = \frac{\vec{U}}{\textbardbl \vec{U} \textbardbl} \kern{2em}
+\hat{y} = \frac{\vec{v} \braket{ \hat{x}, \hat{x} } - \hat{x} \braket{ \vec{v}, \hat{x} }}{\textbardbl \vec{v} \braket{ \hat{x}, \hat{x} } - \hat{x} \braket{ \vec{v}, \hat{x} } \textbardbl} \kern{2em}
+\hat{z} = \hat{x} \times \hat{y}
 $$
 
-Furthermore, the dot product of $\langle \hat{x}, \hat{x} \rangle$ is the square magnitude of the normalized vector $\hat{x}$, meaning this will equal 1 every time, therefore we may omit it.
-In the case of $\langle \vec{v}, \hat{x}\rangle$ however, we expect $\vec{v}$ to never be aligned with $\hat{x}$ since that would be a degenerate case, so we must keep it as is.
+Furthermore, the dot product of $\braket{ \hat{x}, \hat{x} }$ is the square magnitude of the normalized vector $\hat{x}$, meaning this will equal 1 every time, therefore we may omit it.
+In the case of $\braket{ \vec{v}, \hat{x} }$ however, we expect $\vec{v}$ to never be aligned with $\hat{x}$ since that would be a degenerate case, so we must keep it as is.
 This doesn't change the fact that we *normalize* the $\hat{y}$ vector when calculating it though, so scalar terms will cancel out after normalization. $\hat{y}$ is the only time $\vec{v}$ is
-used in computation, so normalizing $\vec{V}$ is insignificant here. We can separate the magnitude of $\vec{v}$ from the dot product $\langle \vec{v}, \hat{x} \rangle$ using the "scalar associative" property.
+used in computation, so normalizing $\vec{V}$ is insignificant here. We can separate the magnitude of $\vec{v}$ from the dot product $\braket{ \vec{v}, \hat{x} }$ using the "scalar associative" property.
 
 $$
-\langle \vec{v}, \hat{x} \rangle = \langle \frac{\vec{V}}{\|\vec{V}\|}, \hat{x}\rangle = \frac{1}{\|\vec{V}\|} \langle \vec{V}, \hat{x} \rangle
+\braket{ \vec{v}, \hat{x} } = \biggl< \frac{\vec{V}}{\textbardbl \vec{V} \textbardbl}, \hat{x} \biggr> = \frac{1}{\textbardbl \vec{V} \textbardbl} \braket{ \vec{V}, \hat{x} }
 $$
 
 The fact that $\hat{y}$ is normalized after computation implies we can simply ignore the scalar term of $\vec{V}$, and use it as is.
 
 $$
 \begin{aligned}
-\hat{x} &= \frac{\vec{U}}{\| \vec{U} \|} &
-\hat{y} &= \frac{\vec{V} - \hat{x} \langle \vec{V}, \hat{x} \rangle}{\| \vec{V} - \hat{x} \langle \vec{V}, \hat{x} \rangle \|} &
+\hat{x} &= \frac{\vec{U}}{\textbardbl \vec{U} \textbardbl} &
+\hat{y} &= \frac{\vec{V} - \hat{x} \braket{ \vec{V}, \hat{x} }}{\textbardbl \vec{V} - \hat{x} \braket{ \vec{V}, \hat{x} } \textbardbl} &
 \hat{z} &= \hat{x} \times \hat{y}
 \end{aligned}
 $$
@@ -287,7 +285,7 @@ Basically we want to tilt our head such that $\mathbf{a}$ is our new x-axis loca
 Mathematically speaking, we want
 
 $$
-\mathbf{R}\left(\theta\right)
+\mathbf{R}(\theta)
 \begin{bmatrix}
     \mathbf{a} & \mathbf{b}
 \end{bmatrix} =
@@ -300,7 +298,7 @@ $$
     \mathbf{a}_y & \mathbf{b}_y
 \end{bmatrix} =
 \begin{bmatrix}
-    \| \mathbf{a} \| & \mathbf{b}'_x \\
+    \textbardbl \mathbf{a} \textbardbl & \mathbf{b}'_x \\
     0 & \mathbf{b}'_y
 \end{bmatrix}
 $$
@@ -308,30 +306,30 @@ $$
 We can solve $\mathbf{a}'$ directly since rotations are scale-invariant operations, meaning the scale of vectors dont change when rotated.
 
 $$
-    \mathbf{R}\left(\theta\right)\left(\lambda \mathbf{x}\right) = \lambda \left(\mathbf{R}\left(\theta\right)\mathbf{x}\right)
+    \mathbf{R}(\theta) (\lambda \mathbf{x} ) = \lambda ( \mathbf{R}(\theta)\mathbf{x} )
 $$
 
-This implies $\mathbf{a}' = \|\mathbf{a}\| \hat{x}$ where $\hat{x}=\left[1, 0\right]^T$ representing the x-axis, and $\|\mathbf{a}\|$ is the magnitude or length of $\mathbf{a}$
+This implies $\mathbf{a}' = \textbardbl \mathbf{a} \textbardbl \hat{x}$ where $\hat{x}=\left[1, 0\right]^T$ representing the x-axis, and $\textbardbl \mathbf{a} \textbardbl$ is the magnitude or length of $\mathbf{a}$
 
 
 Solving for $\mathbf{b}'$ requires a bit more work though. Rotations are angle-invariant as well, meaning angles between vectors are preserved when rotated.
 This lets us define $\mathbf{b}'$ locally with respect to $\mathbf{a}'$ since we know $\mathbf{a}$ is our local x-axis.
-Since $\angle\mathbf{ab}$ is the same as $\angle\mathbf{a}'\mathbf{b}'$, and $\mathbf{a}' = \|\mathbf{a}\|\hat{x}$, we can instead solve for
+Since $\angle\mathbf{ab}$ is the same as $\angle\mathbf{a}'\mathbf{b}'$, and $\mathbf{a}' = \textbardbl \mathbf{a} \textbardbl \hat{x}$, we can instead solve for
 
 $$
 \begin{aligned}
-\mathbf{b}' &= \mathbf{R}\left(\angle\mathbf{ab}\right)\left( \|\mathbf{b}\| \hat{x} \right) \\
+\mathbf{b}' &= \mathbf{R}(\angle\mathbf{ab})( \textbardbl \mathbf{b} \textbardbl \hat{x} ) \\
 &=
 \begin{bmatrix}
     \cos(\angle\mathbf{ab}) & -\sin(\angle\mathbf{ab}) \\
     \sin(\angle\mathbf{ab}) & \cos(\angle\mathbf{ab})
 \end{bmatrix}
 \begin{bmatrix}
-    \|\mathbf{b}\| \\
+    \textbardbl \mathbf{b} \textbardbl \\
     0
 \end{bmatrix} \\
 &=
-\|\mathbf{b}\|
+\textbardbl \mathbf{b} \textbardbl
 \begin{bmatrix}
     \cos(\angle\mathbf{ab}) \\
     \sin(\angle\mathbf{ab})
@@ -343,29 +341,31 @@ Now all we have to do is compute the angle between $\mathbf{a}$ and $\mathbf{b}$
 
 $$
 \angle\mathbf{ab}
-= \arccos\left(\frac{\mathbf{a} \bullet \mathbf{b}}{\|\mathbf{a}\|\|\mathbf{b}\|}\right)
-= \arcsin\left(\frac{\mathbf{a} \times \mathbf{b}}{\|\mathbf{a}\|\|\mathbf{b}\|}\right)
+= \arccos(\frac{\mathbf{a} \bullet \mathbf{b}}{\textbardbl \mathbf{a}\textbardbl \textbardbl \mathbf{b} \textbardbl})
+= \arcsin(\frac{\mathbf{a} \times \mathbf{b}}{\textbardbl \mathbf{a}\textbardbl \textbardbl \mathbf{b} \textbardbl})
 $$
 
 where $\bullet$ represents the vector dot product, and $\times$ represents the 2D vector cross product.
 
 We can use which ever inverse cancels out which ever term in $\mathbf{b}'$ from before, to remove all trig functions.
 
+
+
 $$
 \begin{aligned}
-\mathbf{b}' &= \|\mathbf{b}\|
+\mathbf{b}' &= \textbardbl \mathbf{b} \textbardbl
 \begin{bmatrix}
-    \cancel{\cos}\left(\cancel{\arccos}\left(\frac{\mathbf{a} \bullet \mathbf{b}}{\|\mathbf{a}\|\|\mathbf{b}\|}\right)\right) \\
-    \cancel{\sin}\left(\cancel{\arcsin}\left(\frac{\mathbf{a} \times \mathbf{b}}{\|\mathbf{a}\|\|\mathbf{b}\|}\right)\right)
+    \mathrlap{\kern{5pt}\longrightarrow}{\cos}(\mathrlap{\kern{5pt}\longrightarrow\longrightarrow}{\arccos}(\frac{\mathbf{a} \bullet \mathbf{b}}{\textbardbl \mathbf{a} \textbardbl \textbardbl \mathbf{b} \textbardbl})) \\
+    \mathrlap{\kern{5pt}\longrightarrow}{\sin}(\mathrlap{\kern{5pt}\longrightarrow\longrightarrow}{\arcsin}(\frac{\mathbf{a} \times \mathbf{b}}{\textbardbl \mathbf{a} \textbardbl \textbardbl \mathbf{b} \textbardbl}))
 \end{bmatrix} \\
 &=
-\cancel{\|\mathbf{b}\|}
+\mathrlap{\kern{5pt}\longrightarrow}{\textbardbl \mathbf{b} \textbardbl}
 \begin{bmatrix}
-    \frac{\mathbf{a} \bullet \mathbf{b}}{\|\mathbf{a}\|\cancel{\|\mathbf{b}\|}} &
-    \frac{\mathbf{a} \times \mathbf{b}}{\|\mathbf{a}\|\cancel{\|\mathbf{b}\|}}
+    \frac{\mathbf{a} \bullet \mathbf{b}}{\textbardbl \mathbf{a}\textbardbl \mathrlap{\kern{5pt}\longrightarrow}{\textbardbl \mathbf{b} \textbardbl} } &
+    \frac{\mathbf{a} \times \mathbf{b}}{\textbardbl \mathbf{a}\textbardbl \mathrlap{\kern{5pt}\longrightarrow}{\textbardbl \mathbf{b} \textbardbl}}
 \end{bmatrix}^T \\
 &=
-\frac{1}{\|\mathbf{a}\|}
+\frac{1}{\textbardbl \mathbf{a} \textbardbl}
 \begin{bmatrix}
     \mathbf{a} \bullet \mathbf{b} &
     \mathbf{a} \times \mathbf{b}
@@ -401,13 +401,13 @@ $$
 
 $$
 \begin{aligned}
-\mathbf{a}' &= \frac{1}{\|\mathbf{a}\|}
+\mathbf{a}' &= \frac{1}{\textbardbl \mathbf{a} \textbardbl}
 \begin{bmatrix}
     \mathbf{a} \bullet \mathbf{a} \\
     \mathbf{a} \times \mathbf{a}
 \end{bmatrix}
 &
-\mathbf{b}' &= \frac{1}{\|\mathbf{a}\|}
+\mathbf{b}' &= \frac{1}{\textbardbl \mathbf{a} \textbardbl}
 \begin{bmatrix}
     \mathbf{a} \bullet \mathbf{b} \\
     \mathbf{a} \times \mathbf{b}
@@ -445,7 +445,7 @@ we can represent this as a 2x2 matrix multiplication.
 
 $$
 \left(
-\frac{1}{\|\mathbf{a}\|}
+\frac{1}{\textbardbl \mathbf{a} \textbardbl}
 \begin{bmatrix}
     \mathbf{a}_x & \mathbf{a}_y \\
     -\mathbf{a}_y & \mathbf{a}_x
@@ -459,7 +459,7 @@ $$
 
 ... Ah. yes. of course...
 So fun fact, if you normalize a vector, it can be represented as $\left[\cos(\theta), \sin(\theta)\right]$..
-Which the rotation matrix $\mathbf{R}\left(\theta\right)$ is completely constructed from $\mathbf{a}$, except with the opposite rotation..
+Which the rotation matrix $\mathbf{R}(\theta)$ is completely constructed from $\mathbf{a}$, except with the opposite rotation..
 
 Just goes to show, I am very good at missing things that are obvious, only after I've gone through the lengthy derivation.
 
