@@ -680,7 +680,7 @@ float3 camPivotPos = pivotPos - _WorldSpaceCameraPos;
 // Only care about the XZ plane for rotation
 float3 objFwd = unity_ObjectToWorld._m02_m12_m22;
 float2 camDir = normalize(camPivotPos.xz);
-float2 fwd = normalzie(objFwd.xz);
+float2 fwd = normalize(objFwd.xz);
 
 // Create a rotation matrix (Y) that looks towards the camera
 float3x3 look = lookAt_Y(camDir, fwd);
