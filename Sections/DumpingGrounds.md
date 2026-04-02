@@ -38,6 +38,7 @@ I will try to keep things somewhat orderly, for all of tonight, and none of the 
         - [Arc-cosine `acos` again](#arc-cosine-acos-again)
         - [Atan2 Approximation](#atan2-approximation)
         - [Error function approximation](#error-function-approximation)
+        - [Error function approximation (v2)](#error-function-approximation-v2)
         - [Blackbody Kelvin to 2deg sRGB](#blackbody-kelvin-to-2deg-srgb)
     - [Anti-Aliasing](#anti-aliasing)
         - [A Single Quad](#a-single-quad)
@@ -1050,11 +1051,56 @@ float getAngle(float y, float x) {
 float erf(float x)
 {
     float w = x*(0.2006033923313427*x*x + 2.258650166982141);
-    return 1 - 2 / (exp(w) + 1);
+    return (exp(w) - 1.0) / (exp(w) + 1.0);
 }
 ```
 
 You can find the details of how I came up with this guy [here.](../Sections/ErrorFunctionApproximation.md)
+
+### Error function approximation (v2)
+
+The older version is decent, but the accuracy and large values failing to evaluate correctly, I decided on a whim to redo the error function approximation.
+This ones slightly more shader assembly, but I feel its worth it for the people that would actually know how to use it.
+
+This new function has a max error of just $\pm 4.0545e-5$
+
+```hlsl
+float erf(float x)
+{
+    x = clamp(x, -4.0, 4.0);
+    float w = x * (x*x * (-0.005233092 * x*x + 0.30048782) + 3.2550783);
+    return (exp2(w) - 1.0) / (exp2(w) + 1.0);
+}
+```
+
+And heres a comparison of the error terms
+<img width="2070" height="598" alt="image" src="https://github.com/user-attachments/assets/ae6744da-febb-4849-be50-36ea6bc79008" />
+
+And for those who are curious about the shader assembly, here are those two
+
+Old:
+```hlsl
+mul r0.x, v0.x, v0.x
+mad r0.x, r0.x, l(0.200603), l(2.258650)
+mul r0.x, r0.x, v0.x
+mul r0.x, r0.x, l(1.442695)
+exp r0.x, r0.x
+add r0.xy, r0.xxxx, l(-1.000000, 1.000000, 0.000000, 0.000000)
+div o0.x, r0.x, r0.y
+ret
+```
+New:
+```hlsl
+max r0.x, v0.x, l(-4.000000)
+min r0.x, r0.x, l(4.000000)
+mul r0.y, r0.x, r0.x
+mad r0.z, r0.y, l(-0.005233), l(0.300488)
+mad r0.y, r0.y, r0.z, l(3.255078)
+mul r0.x, r0.y, r0.x
+exp r0.x, r0.x
+add r0.xy, r0.xxxx, l(-1.000000, 1.000000, 0.000000, 0.000000)
+div o0.x, r0.x, r0.y
+```
 
 ### Blackbody Kelvin to 2deg sRGB
 
