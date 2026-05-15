@@ -856,6 +856,10 @@ And this has no overhead by the way.
 
 ## CGINCLUDE for global definitions
 
+> [!WARNING]
+> I have been made aware that CGINCLUDE blocks can fail to tell Unity to reimport your shader due to outdated library shader caching stuff.
+> You have been warned (thanks z3y)
+
 You can wrap a bunch of functions or things you want to occur in each pass of a shader, using `CGINCLUDE` and `ENDCG`
 
 ```hlsl
