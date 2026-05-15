@@ -1,0 +1,8 @@
+//#pragma once
+#ifndef #CGINCNAME#_INCLUDED
+#define #CGINCNAME#_INCLUDED
+
+#include "UnityCG.cginc"
+
+
+#endif //#CGINCNAME#_INCLUDED

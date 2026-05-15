@@ -16,6 +16,7 @@ Here's a random compilation of niche shader things for ya
 - [HLSL Shader Things](#hlsl-shader-things)
 	- [Workflow and Creature Comforts](#workflow-and-creature-comforts)
 		- [Customized Shader Templates](#customized-shader-templates)
+		- [Adding The CGINC Template](#adding-the-cginc-template)
 		- [Named Passes](#named-passes)
 		- [Properties](#properties)
 			- [(The documentation for these)](#the-documentation-for-these)
@@ -369,6 +370,38 @@ Shader "OwenTheProgrammer/Testing/#NAME#"
 }
 ```
 
+### Adding The CGINC Template
+
+Unity has the built-in shader templates such as `Unlit`, `Surface`, and so on. I'm sure if you've been working with shaders for longer than a week or so, you'll find yourself making many Computer Graphics* Include files, hence cginc.
+
+> [!TIP]
+> Fun fact, "Cg" was a shader language developed long ago by NVIDIA, which meant "**C** for **g**raphics." This language was meant to feel like.. well.. C for graphics programmers hence the name. Microsoft was also developing their own shader language for their DirectX platform, the **H**igh-**L**evel-**S**hading-**L**anguage, or HLSL. NVIDIAS Cg compiler and HLSL coexisted for quite some time, making `Cg/HLSL` a common notation.
+> https://en.wikipedia.org/wiki/High-Level_Shader_Language
+
+History aside, I create many cginc files, and I'm sure you do as well. So I've added them into the creation menu!
+
+You may create your own custom script templates within `Assets/ScriptTemplates/[Menu Priority]-[Submenu]__[Item Name]-[Default File Name].[Extension].txt`
+
+The menu priority is the sorting order of the UI in Unity. To save you some time:
+
+- Shader/ (83)
+- Standard Surface Shader (83)
+- Unlit Shader (84)
+- Image Effect Shader (85)
+- Compute Shader (90)
+- Ray Tracing Shader (93)
+
+> [!NOTE]
+> If you'd rather see the Unity sorting numbers by default, theres a setting for that!
+> Go to and enable `Edit > Preferences > Diagnostics > Editor > MenuDisplayPriority`, then restart Unity.
+
+If you just want to see the way I did it, I have a unitypackage and the source stuff
+
+- [Unitypackage](../_InternalAssets/did_you_know/cginc_template/cgincTemplate.unitypackage)
+- [ScriptTemplate](../_InternalAssets/did_you_know/cginc_template/Assets/ScriptTemplates/86-Shader__Cg%20Include-NewInclude.cginc.txt)
+- [AssetProcessor](../_InternalAssets/did_you_know/cginc_template/Assets/Editor/TemplateHandlers/CgincAssetProcessor.cs)
+
+Once you bring those into your project, you'll need to restart unity to make it work.
 
 ### Named Passes
 
