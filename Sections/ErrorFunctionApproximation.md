@@ -142,3 +142,20 @@ float erf(float x)
     return (exp(w) - 1.0) / (exp(w) + 1.0);
 }
 ```
+
+## Updates!
+
+I have been gifted the knowing of the Remez algorithm, thanks to lox (the arealit lox) for letting me know there are better solvers for these things.
+
+```hlsl
+// P3 error: +- 0.0002841958
+// P5 error: +- 0.0000370185
+float erf(float x)
+{
+    x = clamp(x, -4.0, 4.0); //precision clamp
+    //float w = x*(0.28786353367044776*x*x + 3.2595990979774268); //P3
+    float w = x*(x*x*(-0.0051569868267095885*x*x + 0.30031867565428083) + 3.2551327259455123); //P5
+    return (exp2(w) - 1.0) / (exp2(w) + 1.0);
+}
+```
+
