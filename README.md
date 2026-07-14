@@ -13,6 +13,10 @@ I come across a lot of interesting things that people wouldn't easily come acros
 
 Either it doesn't need a whole write-up paper on the matter, or I'm too lazy to make a document for it quite yet, you'll find whatever is "miscellaneous" or up and coming here.
 
+## [Normal Reconstruction Work](./Sections/NormalReconstruction.md)
+
+Roughly three years worth of work trying to derive screenspace normals from just the depth buffer. Had to stop working on it to job search.
+
 ## [Owens Math Notes](./Sections/OwensMathNotes.md)
 
 Don't expect any beginner friendly stuff in here. These are the math structures I deem worthy of actually writing down (meaning it took me much more than a week to conceptualize.) I see no point in keeping my notes as private, especially when I might be helping someone down the line!
