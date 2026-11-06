@@ -1,5 +1,5 @@
-#ifndef LATRIX_CRT2D_INCLUDED
-#define LATRIX_CRT2D_INCLUDED
+#ifndef CRTSTANDARD2D_INCLUDED
+#define CRTSTANDARD2D_INCLUDED
 
 uniform float4 _CustomRenderTextureInfo;
 
@@ -33,4 +33,4 @@ crt_v2f crt_vert(uint vertexID : SV_VertexID)
     return o;
 }
 
-#endif //LATRIX_CRT2D_INCLUDED
+#endif //CRTSTANDARD2D_INCLUDED
